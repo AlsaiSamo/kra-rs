@@ -1,0 +1,7 @@
+/target
+result*
+.envrc
+/.direnv
+*.pcm
+*.mp3
+tarpaulin-report.html
