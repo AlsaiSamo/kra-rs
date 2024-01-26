@@ -1,9 +1,12 @@
-//! Library for parsing `.kra` files, which are used mainly by Krita.
+//! Library for reading `.kra` files, which are created/modified by [Krita](https://krita.org/).
 //!
-//! The library will most likely only support a small range of available features,
-//! due to my intents to use it with the default settings and a basic workflow only.
+//! It can be used for importing files into applications that wish to operate on layers
+//! or metadata.
 //!
-//! It is also only able to parse the file, it is unable to modify it or create a new one.
+//! The library uses GPL-3.0-only license, as portions of it are or will be adapted
+//! from Krita's source code.
+//!
+//! The library is far from being finished at the current moment.
 
 //TODO: remove feature dependency? when possible
 #![feature(iterator_try_collect)]
