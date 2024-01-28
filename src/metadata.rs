@@ -15,7 +15,14 @@ use crate::{
     event_unwrap_as_start, get_text_between_tags, next_xml_event, parse_attr, Colorspace,
 };
 
-const DOCTYPE: &str = r"DOC PUBLIC '-//KDE//DTD krita 2.0//EN' 'http://www.calligra.org/DTD/krita-2.0.dtd'";
+const MAINDOC_DOCTYPE: &str =
+    r"DOC PUBLIC '-//KDE//DTD krita 2.0//EN' 'http://www.calligra.org/DTD/krita-2.0.dtd'";
+const MAINDOC_XMLNS: &str =
+    r"http://www.calligra.org/DTD/krita";
+const DOCUMENTINFO_DOCTYPE: &str =
+    r"document-info PUBLIC '-//KDE//DTD document-info 1.1//EN' 'http://www.calligra.org/DTD/document-info-1.1.dtd'";
+const DOCUMENTINFO_XMLNS: &str =
+    r"http://www.calligra.org/DTD/document-info";
 const SYNTAX_VERSION: &str = "2.0";
 const MIMETYPE: &str = "application/x-kra";
 
@@ -112,9 +119,9 @@ impl ImageMetadata {
         //Checking that the doctype has the correct DTD
         let event = next_xml_event(reader)?;
         let doctype = event_unwrap_as_doctype(event)?.unescape()?;
-        if doctype != DOCTYPE {
+        if doctype != MAINDOC_DOCTYPE {
             return Err(MetadataErrorReason::XmlError(XmlError::AssertionFailed(
-                DOCTYPE,
+                MAINDOC_DOCTYPE,
                 doctype.to_string(),
             )));
         };
@@ -123,8 +130,14 @@ impl ImageMetadata {
         let doc_start = event_unwrap_as_start(event)?;
         //TODO: what information should I check? Procdessing that it is name DOC
         // seems redundant and useless.
-        let xmlns = event_get_attr(&doc_start, "xmlns")?;
-        //TODO: compare xmlns to required?
+        let xmlns = event_get_attr(&doc_start, "xmlns")?.unescape_value()?;
+        if xmlns != MAINDOC_XMLNS {
+            return Err(MetadataErrorReason::XmlError(XmlError::AssertionFailed(
+                MAINDOC_XMLNS,
+                xmlns.to_string(),
+            )));
+        };
+
         let syntax_version = event_get_attr(&doc_start, "syntaxVersion")?.unescape_value()?;
         if syntax_version != SYNTAX_VERSION {
             return Err(MetadataErrorReason::XmlError(XmlError::AssertionFailed(
@@ -233,19 +246,30 @@ pub struct DocumentInfo {
 impl DocumentInfo {
     pub(crate) fn from_xml(reader: &mut XmlReader<&[u8]>) -> Result<Self, MetadataErrorReason> {
         //TODO this skips initial declaration, is this fine?
-        let event = next_xml_event(reader)?;
+        let _event = next_xml_event(reader)?;
 
         let event = next_xml_event(reader)?;
         let doctype = event_unwrap_as_doctype(event)?.unescape()?;
-        //TODO: verify doctype
+        if doctype != DOCUMENTINFO_DOCTYPE {
+            return Err(MetadataErrorReason::XmlError(XmlError::AssertionFailed(
+                DOCUMENTINFO_DOCTYPE,
+                doctype.to_string(),
+            )));
+        };
 
         //<document-info>
         let event = next_xml_event(reader)?;
         let doc_info = event_unwrap_as_start(event)?;
         let xmlns = event_get_attr(&doc_info, "xmlns")?
-            .unescape_value()?
-            .as_ref();
-        //TODO: verify xmlns
+            .unescape_value()?;
+        //TODO: there are four such blocks, two in this function and two in maindoc's from_xml().
+        // Cound be abstracted away
+        if xmlns != DOCUMENTINFO_XMLNS {
+            return Err(MetadataErrorReason::XmlError(XmlError::AssertionFailed(
+                DOCUMENTINFO_XMLNS,
+                xmlns.to_string(),
+            )));
+        };
 
         //<about>
         let event = next_xml_event(reader)?;
