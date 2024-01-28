@@ -26,26 +26,28 @@ pub struct Uuid([u8; 32]);
 impl FromStr for Uuid {
     type Err = ParseUuidError;
 
-    //TODO: make effective (as little copy as possible)
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         if !s.is_ascii() {
             return Err(ParseUuidError(s.to_owned()));
         };
-        //Drops first and last brackets
-        let s = s.get(1..38).ok_or(ParseUuidError(s.to_owned()))?.as_bytes();
-        let mut uuid: Vec<u8> = Vec::with_capacity(32);
-        uuid.extend_from_slice(&s[0..8]);
-        uuid.extend_from_slice(&s[9..13]);
-        uuid.extend_from_slice(&s[14..18]);
-        uuid.extend_from_slice(&s[19..23]);
-        uuid.extend_from_slice(&s[24..]);
-        let mut ret: [u8; 32] = [0; 32];
-        //TODO: better error
-        // SAFETY: s is ascii, as previously checked.
-        uuid.take(32)
-            .read(&mut ret)
-            .map_err(|_| ParseUuidError(String::from_utf8(s.to_owned()).unwrap()))?;
-        Ok(Uuid(ret))
+        let bytes = s.as_bytes();
+        let p1 = &bytes[1..9];
+        let p2 = &bytes[10..14];
+        let p3 = &bytes[15..19];
+        let p4 = &bytes[20..24];
+        let p5 = &bytes[25..=36];
+        let ret = p1
+            .iter()
+            .chain(p2.iter())
+            .chain(p3.iter())
+            .chain(p4.iter())
+            .chain(p5.iter())
+            .copied()
+            .collect::<Vec<u8>>();
+        println!("{}", String::from_utf8(ret.clone()).unwrap());
+        Ok(Uuid(
+            ret.try_into().map_err(|_| ParseUuidError(s.to_owned()))?,
+        ))
     }
 }
 
