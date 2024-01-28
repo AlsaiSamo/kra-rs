@@ -16,7 +16,6 @@ use crate::{
 };
 
 // TODO: generate functions with a derive macro
-// TODO: mention somewhere that we don't extract what layer is selected
 
 #[allow(missing_docs)]
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
@@ -404,21 +403,21 @@ pub(crate) struct CommonNodeProps {
 
 impl CommonNodeProps {
     pub(crate) fn parse_tag(tag: &BytesStart) -> Result<Self, MetadataErrorReason> {
-        let name = event_get_attr(&tag, "name")?.unescape_value()?.into();
-        let uuid = event_get_attr(&tag, "uuid")?.unescape_value()?;
-        let filename = event_get_attr(&tag, "filename")?.unescape_value()?.into();
-        let visible = event_get_attr(&tag, "visible")?;
-        let locked = event_get_attr(&tag, "locked")?;
-        let colorlabel = event_get_attr(&tag, "colorlabel")?;
-        let x = event_get_attr(&tag, "x")?;
-        let y = event_get_attr(&tag, "y")?;
+        let name = event_get_attr(tag, "name")?.unescape_value()?.into();
+        let uuid = event_get_attr(tag, "uuid")?.unescape_value()?;
+        let filename = event_get_attr(tag, "filename")?.unescape_value()?.into();
+        let visible = event_get_attr(tag, "visible")?;
+        let locked = event_get_attr(tag, "locked")?;
+        let colorlabel = event_get_attr(tag, "colorlabel")?;
+        let x = event_get_attr(tag, "x")?;
+        let y = event_get_attr(tag, "y")?;
 
-        let in_timeline = match event_get_attr(&tag, "intimeline")?
+        let in_timeline = match event_get_attr(tag, "intimeline")?
             .unescape_value()?
             .as_ref()
         {
             "0" => InTimeline::False,
-            "1" => InTimeline::True(parse_bool(event_get_attr(&tag, "onionskin")?)?),
+            "1" => InTimeline::True(parse_bool(event_get_attr(tag, "onionskin")?)?),
             what => {
                 return Err(MetadataErrorReason::XmlError(XmlError::ValueError(
                     what.to_string(),
@@ -472,20 +471,20 @@ pub struct PaintLayerProps {
 
 impl PaintLayerProps {
     pub(crate) fn parse_tag(tag: &BytesStart) -> Result<Self, MetadataErrorReason> {
-        let composite_op = event_get_attr(&tag, "compositeop")?;
-        let collapsed = event_get_attr(&tag, "collapsed")?;
-        let opacity = event_get_attr(&tag, "opacity")?;
-        let colorspace = event_get_attr(&tag, "colorspacename")?.unescape_value()?;
-        let channel_lock_flags = event_get_attr(&tag, "channellockflags")?
+        let composite_op = event_get_attr(tag, "compositeop")?;
+        let collapsed = event_get_attr(tag, "collapsed")?;
+        let opacity = event_get_attr(tag, "opacity")?;
+        let colorspace = event_get_attr(tag, "colorspacename")?.unescape_value()?;
+        let channel_lock_flags = event_get_attr(tag, "channellockflags")?
             .unescape_value()?
             .into_owned();
-        let channel_flags = event_get_attr(&tag, "channelflags")?.unescape_value()?;
+        let channel_flags = event_get_attr(tag, "channelflags")?.unescape_value()?;
         Ok(PaintLayerProps {
             composite_op: parse_attr(composite_op)?,
             opacity: parse_attr(opacity)?,
             collapsed: parse_bool(collapsed)?,
             colorspace: Colorspace::try_from(colorspace.as_ref())?,
-            channel_lock_flags: channel_lock_flags.into(),
+            channel_lock_flags,
             channel_flags: channel_flags.into(),
         })
     }
@@ -516,8 +515,8 @@ pub struct FilterMaskProps {
 
 impl FilterMaskProps {
     pub(crate) fn parse_tag(tag: &BytesStart) -> Result<Self, MetadataErrorReason> {
-        let filter_version = event_get_attr(&tag, "filterversion")?;
-        let filter_name = event_get_attr(&tag, "filtername")?.unescape_value()?;
+        let filter_version = event_get_attr(tag, "filterversion")?;
+        let filter_name = event_get_attr(tag, "filtername")?.unescape_value()?;
         Ok(FilterMaskProps {
             filter_name: filter_name.to_string(),
             filter_version: parse_attr(filter_version)?,
@@ -534,7 +533,7 @@ pub struct SelectionMaskProps {
 
 impl SelectionMaskProps {
     pub(crate) fn parse_tag(tag: &BytesStart) -> Result<Self, MetadataErrorReason> {
-        let active = event_get_attr(&tag, "active")?;
+        let active = event_get_attr(tag, "active")?;
         Ok(SelectionMaskProps {
             active: parse_bool(active)?,
         })

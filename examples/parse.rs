@@ -8,18 +8,15 @@ use kra::{
 //print all nodes, recursively
 fn tree(node: &Node, depth: usize) {
     println!("{:>width$}{1}", " ", node, width = depth * 4);
-    match node.props().node_type() {
-        NodeType::GroupLayer(props) => {
-            for i in props.layers() {
-                tree(i, depth + 1)
-            }
+    if let NodeType::GroupLayer(props) = node.props().node_type() {
+        for i in props.layers() {
+            tree(i, depth + 1)
         }
-        _ => {}
     }
 }
 
 fn main() {
-    let path: PathBuf = args().skip(1).next().expect("Expected path to file").into();
+    let path: PathBuf = args().nth(1).expect("Expected path to file").into();
     match KraFile::read(path) {
         Ok(file) => {
             for i in file.layers() {

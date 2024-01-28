@@ -2,7 +2,6 @@
 
 use std::{
     fmt::{self, Display},
-    io::Read,
     str,
     str::FromStr,
 };
@@ -17,12 +16,9 @@ use crate::{
 
 const MAINDOC_DOCTYPE: &str =
     r"DOC PUBLIC '-//KDE//DTD krita 2.0//EN' 'http://www.calligra.org/DTD/krita-2.0.dtd'";
-const MAINDOC_XMLNS: &str =
-    r"http://www.calligra.org/DTD/krita";
-const DOCUMENTINFO_DOCTYPE: &str =
-    r"document-info PUBLIC '-//KDE//DTD document-info 1.1//EN' 'http://www.calligra.org/DTD/document-info-1.1.dtd'";
-const DOCUMENTINFO_XMLNS: &str =
-    r"http://www.calligra.org/DTD/document-info";
+const MAINDOC_XMLNS: &str = r"http://www.calligra.org/DTD/krita";
+const DOCUMENTINFO_DOCTYPE: &str = r"document-info PUBLIC '-//KDE//DTD document-info 1.1//EN' 'http://www.calligra.org/DTD/document-info-1.1.dtd'";
+const DOCUMENTINFO_XMLNS: &str = r"http://www.calligra.org/DTD/document-info";
 const SYNTAX_VERSION: &str = "2.0";
 const MIMETYPE: &str = "application/x-kra";
 
@@ -51,7 +47,6 @@ impl FromStr for Uuid {
             .chain(p5.iter())
             .copied()
             .collect::<Vec<u8>>();
-        println!("{}", String::from_utf8(ret.clone()).unwrap());
         Ok(Uuid(
             ret.try_into().map_err(|_| ParseUuidError(s.to_owned()))?,
         ))
@@ -113,10 +108,8 @@ impl Display for ImageMetadata {
 impl ImageMetadata {
     pub(crate) fn from_xml(reader: &mut XmlReader<&[u8]>) -> Result<Self, MetadataErrorReason> {
         //TODO: do we need to check this declaration properly?
-        // Processes the first declaration
         next_xml_event(reader)?;
 
-        //Checking that the doctype has the correct DTD
         let event = next_xml_event(reader)?;
         let doctype = event_unwrap_as_doctype(event)?.unescape()?;
         if doctype != MAINDOC_DOCTYPE {
@@ -128,8 +121,6 @@ impl ImageMetadata {
 
         let event = next_xml_event(reader)?;
         let doc_start = event_unwrap_as_start(event)?;
-        //TODO: what information should I check? Procdessing that it is name DOC
-        // seems redundant and useless.
         let xmlns = event_get_attr(&doc_start, "xmlns")?.unescape_value()?;
         if xmlns != MAINDOC_XMLNS {
             return Err(MetadataErrorReason::XmlError(XmlError::AssertionFailed(
@@ -216,8 +207,8 @@ pub struct DocInfoAbout {
     r#abstract: String,
     keyword: String,
     initial_creator: String,
-    //TODO: as timestamps?
     editing_cycles: String,
+    //TODO: as timestamps?
     editing_time: String,
     date: String,
     creation_date: String,
@@ -245,7 +236,7 @@ pub struct DocumentInfo {
 
 impl DocumentInfo {
     pub(crate) fn from_xml(reader: &mut XmlReader<&[u8]>) -> Result<Self, MetadataErrorReason> {
-        //TODO this skips initial declaration, is this fine?
+        //TODO: as with maindoc, this skips initial declaration
         let _event = next_xml_event(reader)?;
 
         let event = next_xml_event(reader)?;
@@ -260,9 +251,8 @@ impl DocumentInfo {
         //<document-info>
         let event = next_xml_event(reader)?;
         let doc_info = event_unwrap_as_start(event)?;
-        let xmlns = event_get_attr(&doc_info, "xmlns")?
-            .unescape_value()?;
-        //TODO: there are four such blocks, two in this function and two in maindoc's from_xml().
+        let xmlns = event_get_attr(&doc_info, "xmlns")?.unescape_value()?;
+        //TODO: there are multiple such blocks, two in this function and two in maindoc's from_xml().
         // Cound be abstracted away
         if xmlns != DOCUMENTINFO_XMLNS {
             return Err(MetadataErrorReason::XmlError(XmlError::AssertionFailed(
@@ -338,9 +328,7 @@ impl DocumentInfo {
         //EOF
         match next_xml_event(reader)? {
             Event::Eof => Ok(DocumentInfo { about, author }),
-            other => {
-                Err(XmlError::AssertionFailed("end of file", event_to_string(&other)?).into())
-            }
+            other => Err(XmlError::AssertionFailed("end of file", event_to_string(&other)?).into()),
         }
     }
 }

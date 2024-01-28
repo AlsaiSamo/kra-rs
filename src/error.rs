@@ -1,15 +1,9 @@
 //! Error types for the library.
 
-use std::{
-    io,
-    path::{Path, PathBuf},
-    string::FromUtf8Error,
-};
+use std::{io, path::PathBuf, string::FromUtf8Error};
 
 use quick_xml::Reader;
 use thiserror::Error;
-
-//TODO: use pub instead of pub(crate)?
 
 #[derive(Error, Debug, PartialEq, Eq, Clone, Hash)]
 #[error("unknown colorspace: {0}")]
@@ -37,7 +31,6 @@ pub enum XmlError {
     #[error("could not parse XML")]
     ParsingError(#[from] quick_xml::Error),
 
-    //TODO: first one can be replaced with static string.
     // Error when XML can be parsed but is incorrect
     #[error("unexpected XML event: expected {0}, got {1}")]
     EventError(&'static str, String),
@@ -82,7 +75,6 @@ impl From<FromUtf8Error> for MetadataErrorReason {
 }
 
 impl MetadataErrorReason {
-    //TODO: is the name correct? should it be defined for MetadataError instead?
     // Fills out MetadataError with the given reason and location
     pub(crate) fn to_metadata_error(self, file: PathBuf, reader: &Reader<&[u8]>) -> MetadataError {
         MetadataError {

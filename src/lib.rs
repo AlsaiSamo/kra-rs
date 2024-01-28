@@ -44,8 +44,10 @@ use crate::metadata::DocumentInfo;
 /// Colorspace identifier.
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 #[non_exhaustive]
+#[derive(Default)]
 pub enum Colorspace {
     /// Default RGBA colorspace.
+    #[default]
     RGBA,
 }
 
@@ -57,12 +59,6 @@ impl TryFrom<&str> for Colorspace {
             "RGBA" => Ok(Colorspace::RGBA),
             other => Err(UnknownColorspace(other.to_owned())),
         }
-    }
-}
-
-impl Default for Colorspace {
-    fn default() -> Self {
-        Colorspace::RGBA
     }
 }
 
@@ -101,6 +97,7 @@ impl KraFile {
         zip.by_name("documentinfo.xml")?
             .read_to_string(&mut doc_info)?;
         let mut doc_info = XmlReader::from_str(doc_info.as_str());
+
         doc_info.trim_text(true);
         let doc_info = DocumentInfo::from_xml(&mut doc_info)
             .map_err(|err| err.to_metadata_error("documentinfo.xml".into(), &doc_info))?;
@@ -108,15 +105,14 @@ impl KraFile {
         let mut maindoc = String::new();
         zip.by_name("maindoc.xml")?.read_to_string(&mut maindoc)?;
         let mut maindoc = XmlReader::from_str(maindoc.as_str());
-        maindoc.trim_text(true);
 
+        maindoc.trim_text(true);
         let meta = ImageMetadata::from_xml(&mut maindoc)
             .map_err(|err| err.to_metadata_error("maindoc.xml".into(), &maindoc))?;
 
         let layers = get_layers(&mut maindoc)
             .map_err(|err| err.to_metadata_error("maindoc".into(), &maindoc))?;
 
-        //TODO: properties at the end of maindoc
         Ok(KraFile {
             meta,
             doc_info,
@@ -136,18 +132,15 @@ pub(crate) fn next_xml_event<'a>(reader: &mut XmlReader<&'a [u8]>) -> Result<Eve
 }
 
 #[inline]
-pub(crate) fn event_unwrap_as_doctype<'a>(event: Event<'a>) -> Result<BytesText<'a>, XmlError> {
+pub(crate) fn event_unwrap_as_doctype(event: Event) -> Result<BytesText, XmlError> {
     match event {
         Event::DocType(event) => Ok(event),
-        other => Err(XmlError::EventError(
-            "a doctype",
-            event_to_string(&other)?,
-        )),
+        other => Err(XmlError::EventError("a doctype", event_to_string(&other)?)),
     }
 }
 
 #[inline]
-pub(crate) fn event_unwrap_as_start<'a>(event: Event<'a>) -> Result<BytesStart<'a>, XmlError> {
+pub(crate) fn event_unwrap_as_start(event: Event) -> Result<BytesStart, XmlError> {
     match event {
         Event::Start(event) => Ok(event),
         other => Err(XmlError::EventError(
@@ -157,25 +150,20 @@ pub(crate) fn event_unwrap_as_start<'a>(event: Event<'a>) -> Result<BytesStart<'
     }
 }
 
+//TODO: remove?
 #[inline]
-pub(crate) fn event_unwrap_as_text<'a>(event: Event<'a>) -> Result<BytesText<'a>, XmlError> {
+pub(crate) fn event_unwrap_as_text(event: Event) -> Result<BytesText, XmlError> {
     match event {
         Event::Text(event) => Ok(event),
-        other => Err(XmlError::EventError(
-            "text event",
-            event_to_string(&other)?,
-        )),
+        other => Err(XmlError::EventError("text event", event_to_string(&other)?)),
     }
 }
 
 #[inline]
-pub(crate) fn event_unwrap_as_end<'a>(event: Event<'a>) -> Result<BytesEnd<'a>, XmlError> {
+pub(crate) fn event_unwrap_as_end(event: Event) -> Result<BytesEnd, XmlError> {
     match event {
         Event::End(event) => Ok(event),
-        other => Err(XmlError::EventError(
-            "end event",
-            event_to_string(&other)?,
-        )),
+        other => Err(XmlError::EventError("end event", event_to_string(&other)?)),
     }
 }
 
@@ -261,11 +249,9 @@ fn parse_layer(reader: &mut XmlReader<&[u8]>) -> Result<Node, MetadataErrorReaso
     let tag: BytesStart = match event {
         Event::Start(t) | Event::Empty(t) => t,
         other => {
-            return Err(XmlError::EventError(
-                "layer/mask start event",
-                event_to_string(&other)?,
-            )
-            .into());
+            return Err(
+                XmlError::EventError("layer/mask start event", event_to_string(&other)?).into(),
+            );
         }
     };
 
@@ -346,17 +332,19 @@ fn get_layers(reader: &mut XmlReader<&[u8]>) -> Result<Vec<Node>, MetadataErrorR
         match parse_layer(reader) {
             Ok(layer) => layers.push(layer),
             Err(MetadataErrorReason::XmlError(XmlError::EventError(a, ref b)))
+                //</layers>
                 if (a == "layer/mask start event" && b == "layers") =>
             {
                 break;
             }
             //Actual error
             Err(other) => {
-                println!("{:?}", other);
                 return Err(other);
             }
         }
     }
+
+    //</layers> is already handled in the loop
 
     Ok(layers)
 }
@@ -379,12 +367,11 @@ fn parse_mask(reader: &mut XmlReader<&[u8]>) -> Result<Vec<Node>, MetadataErrorR
                     break;
                 } else {
                     return Err(MetadataErrorReason::XmlError(XmlError::EventError(
-                        "masks end event".into(),
+                        "masks end event",
                         String::from_utf8(tag.as_ref().to_vec())?,
                     )));
                 }
             }
-            // a mask
             Event::Empty(tag) => {
                 let common = CommonNodeProps::parse_tag(&tag)?;
                 let node_type = event_get_attr(&tag, "nodetype")?.unescape_value()?;
@@ -393,6 +380,7 @@ fn parse_mask(reader: &mut XmlReader<&[u8]>) -> Result<Vec<Node>, MetadataErrorR
                     "selectionmask" => {
                         NodeType::SelectionMask(SelectionMaskProps::parse_tag(&tag)?)
                     }
+
                     _ => {
                         return Err(MetadataErrorReason::UnknownLayerType(UnknownLayerType(
                             node_type.into_owned(),
