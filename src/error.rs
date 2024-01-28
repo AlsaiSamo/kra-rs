@@ -31,7 +31,7 @@ pub struct UnknownLayerType(pub(crate) String);
 pub enum XmlError {
     // Error used when we check some property
     #[error("assertion about XML metadata failed: expected {0}, got {1}")]
-    AssertionFailed(String, String),
+    AssertionFailed(&'static str, String),
 
     // Error when XML cannot be interpreted
     #[error("could not parse XML")]
@@ -40,7 +40,7 @@ pub enum XmlError {
     //TODO: first one can be replaced with static string.
     // Error when XML can be parsed but is incorrect
     #[error("unexpected XML event: expected {0}, got {1}")]
-    EventError(String, String),
+    EventError(&'static str, String),
 
     #[error("missing XML value: {0}")]
     MissingValue(String),

@@ -140,7 +140,7 @@ pub(crate) fn event_unwrap_as_doctype<'a>(event: Event<'a>) -> Result<BytesText<
     match event {
         Event::DocType(event) => Ok(event),
         other => Err(XmlError::EventError(
-            "a doctype".to_string(),
+            "a doctype",
             event_to_string(&other)?,
         )),
     }
@@ -151,7 +151,7 @@ pub(crate) fn event_unwrap_as_start<'a>(event: Event<'a>) -> Result<BytesStart<'
     match event {
         Event::Start(event) => Ok(event),
         other => Err(XmlError::EventError(
-            "start event".to_string(),
+            "start event",
             event_to_string(&other)?,
         )),
     }
@@ -162,7 +162,7 @@ pub(crate) fn event_unwrap_as_text<'a>(event: Event<'a>) -> Result<BytesText<'a>
     match event {
         Event::Text(event) => Ok(event),
         other => Err(XmlError::EventError(
-            "text event".to_string(),
+            "text event",
             event_to_string(&other)?,
         )),
     }
@@ -173,7 +173,7 @@ pub(crate) fn event_unwrap_as_end<'a>(event: Event<'a>) -> Result<BytesEnd<'a>, 
     match event {
         Event::End(event) => Ok(event),
         other => Err(XmlError::EventError(
-            "end event".to_string(),
+            "end event",
             event_to_string(&other)?,
         )),
     }
@@ -231,7 +231,7 @@ pub(crate) fn get_text_between_tags<'a>(
         }
         other => {
             return Err(XmlError::EventError(
-                "text, CDATA or end event".to_owned(),
+                "text, CDATA or end event",
                 event_to_string(&other)?,
             ));
         }
@@ -262,7 +262,7 @@ fn parse_layer(reader: &mut XmlReader<&[u8]>) -> Result<Node, MetadataErrorReaso
         Event::Start(t) | Event::Empty(t) => t,
         other => {
             return Err(XmlError::EventError(
-                "layer/mask start event".to_owned(),
+                "layer/mask start event",
                 event_to_string(&other)?,
             )
             .into());
@@ -291,7 +291,7 @@ fn parse_layer(reader: &mut XmlReader<&[u8]>) -> Result<Node, MetadataErrorReaso
             loop {
                 match parse_layer(reader) {
                     Ok(layer) => layers.push(layer),
-                    Err(MetadataErrorReason::XmlError(XmlError::EventError(ref a, ref b)))
+                    Err(MetadataErrorReason::XmlError(XmlError::EventError(a, ref b)))
                         // This assumes that we have hit </layers>
                         if (a == "layer/mask start event" && b == "layers") =>
                     {
@@ -345,7 +345,7 @@ fn get_layers(reader: &mut XmlReader<&[u8]>) -> Result<Vec<Node>, MetadataErrorR
     loop {
         match parse_layer(reader) {
             Ok(layer) => layers.push(layer),
-            Err(MetadataErrorReason::XmlError(XmlError::EventError(ref a, ref b)))
+            Err(MetadataErrorReason::XmlError(XmlError::EventError(a, ref b)))
                 if (a == "layer/mask start event" && b == "layers") =>
             {
                 break;
@@ -405,7 +405,7 @@ fn parse_mask(reader: &mut XmlReader<&[u8]>) -> Result<Vec<Node>, MetadataErrorR
             }
             other => {
                 return Err(MetadataErrorReason::XmlError(XmlError::EventError(
-                    "empty or end event".to_string(),
+                    "empty or end event",
                     event_to_string(&other)?,
                 )))
             }

@@ -15,6 +15,10 @@ use crate::{
     event_unwrap_as_start, get_text_between_tags, next_xml_event, parse_attr, Colorspace,
 };
 
+const DOCTYPE: &str = r"DOC PUBLIC '-//KDE//DTD krita 2.0//EN' 'http://www.calligra.org/DTD/krita-2.0.dtd'";
+const SYNTAX_VERSION: &str = "2.0";
+const MIMETYPE: &str = "application/x-kra";
+
 /// UUID of layers, stored without dashes.
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
 pub struct Uuid([u8; 32]);
@@ -106,12 +110,9 @@ impl ImageMetadata {
         //Checking that the doctype has the correct DTD
         let event = next_xml_event(reader)?;
         let doctype = event_unwrap_as_doctype(event)?.unescape()?;
-        //TODO: move to a constant
-        let correct_doctype =
-            r"DOC PUBLIC '-//KDE//DTD krita 2.0//EN' 'http://www.calligra.org/DTD/krita-2.0.dtd'";
-        if doctype != correct_doctype {
+        if doctype != DOCTYPE {
             return Err(MetadataErrorReason::XmlError(XmlError::AssertionFailed(
-                correct_doctype.to_owned(),
+                DOCTYPE,
                 doctype.to_string(),
             )));
         };
@@ -122,12 +123,10 @@ impl ImageMetadata {
         // seems redundant and useless.
         let xmlns = event_get_attr(&doc_start, "xmlns")?;
         //TODO: compare xmlns to required?
-        //TODO: move to a constant
-        let correct_syntax_version = "2.0";
         let syntax_version = event_get_attr(&doc_start, "syntaxVersion")?.unescape_value()?;
-        if syntax_version != correct_syntax_version {
+        if syntax_version != SYNTAX_VERSION {
             return Err(MetadataErrorReason::XmlError(XmlError::AssertionFailed(
-                correct_syntax_version.to_owned(),
+                SYNTAX_VERSION,
                 syntax_version.to_string(),
             )));
         };
@@ -138,10 +137,9 @@ impl ImageMetadata {
         let image_props = event_unwrap_as_start(event)?;
 
         let mime = event_get_attr(&image_props, "mime")?.unescape_value()?;
-        if mime != "application/x-kra" {
+        if mime != MIMETYPE {
             return Err(MetadataErrorReason::XmlError(XmlError::AssertionFailed(
-                //TODO: move to a constant
-                "application/x-kra".to_owned(),
+                MIMETYPE,
                 mime.to_string(),
             )));
         };
@@ -315,7 +313,7 @@ impl DocumentInfo {
         match next_xml_event(reader)? {
             Event::Eof => Ok(DocumentInfo { about, author }),
             other => {
-                Err(XmlError::AssertionFailed("EOF".to_owned(), event_to_string(&other)?).into())
+                Err(XmlError::AssertionFailed("end of file", event_to_string(&other)?).into())
             }
         }
     }
