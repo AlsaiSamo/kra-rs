@@ -1,27 +1,30 @@
 
 # Table of Contents
 
-1.  [Introduction](#org16cc9fa)
-    1.  [Features](#org221adf8)
-        1.  [Reading](#orgbed5d66)
-        2.  [Writing](#org196ddcc)
-        3.  [Rendering](#org705f5a7)
-2.  [License](#org213bcdd)
+1.  [Introduction](#org97de986)
+    1.  [Features](#orga85e419)
+        1.  [Reading](#org6b01810)
+        2.  [Writing](#org094713a)
+        3.  [Rendering](#orge94b659)
+    2.  [Tasks](#orgb0d7304)
+        1.  [Publishing](#org345c2dc)
+        2.  [Refactoring](#org108473c)
+2.  [License](#orgade2f60)
 
 
-<a id="org16cc9fa"></a>
+<a id="org97de986"></a>
 
 # Introduction
 
 This is a library for reading `.kra` files.
 
 
-<a id="org221adf8"></a>
+<a id="orga85e419"></a>
 
 ## TODO Features
 
 
-<a id="orgbed5d66"></a>
+<a id="org6b01810"></a>
 
 ### TODO Reading
 
@@ -44,7 +47,7 @@ This is a library for reading `.kra` files.
 -   [ ] Extracting images
 
 
-<a id="org196ddcc"></a>
+<a id="org094713a"></a>
 
 ### Writing
 
@@ -52,14 +55,35 @@ Currently, there are no plans to support editing parsed data and writing `.kra` 
 This may change in the future.
 
 
-<a id="org705f5a7"></a>
+<a id="orge94b659"></a>
 
 ### Rendering
 
 Rendering is best be left to a different crate.
 
 
-<a id="org213bcdd"></a>
+<a id="orgb0d7304"></a>
+
+## TODO Tasks
+
+
+<a id="org345c2dc"></a>
+
+### CURRENT Publishing
+
+-   [ ] Docs
+-   [ ] Tests
+-   [ ] Examples
+
+
+<a id="org108473c"></a>
+
+### Refactoring
+
+-   [ ] Generate parsing code instead of writing it by hand.
+
+
+<a id="orgade2f60"></a>
 
 # License
 

@@ -25,5 +25,12 @@ Currently, there are no plans to support editing parsed data and writing =.kra= 
 This may change in the future.
 *** Rendering
 Rendering is best be left to a different crate.
+** TODO Tasks
+*** CURRENT Publishing
++ [ ] Docs
++ [ ] Tests
++ [ ] Examples
+*** Refactoring
++ [ ] Generate parsing code instead of writing it by hand.
 * License
 The library is licensed under GPL 3.0 because some of its code is or will be adapted from Krita's.
