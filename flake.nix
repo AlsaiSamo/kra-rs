@@ -1,5 +1,4 @@
 {
-  description = "Build a cargo project without extra checks";
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     crane = {
@@ -15,7 +14,7 @@
     };
     flake-utils.url = "github:numtide/flake-utils";
   };
-  outputs = {
+  outputs = input @ {
     self,
     nixpkgs,
     crane,
@@ -23,26 +22,34 @@
     flake-utils,
     ...
   }:
-    flake-utils.lib.eachDefaultSystem (system: let
+    flake-utils.lib.eachDefaultSystem (
+      system: let
       pkgs = import nixpkgs {
         inherit system;
         overlays = [(import rust-overlay)];
       };
-      rustNightly = pkgs.rust-bin.selectLatestNightlyWith (t: t.default);
-      craneLib = (crane.mkLib pkgs).overrideToolchain rustNightly;
-      my-crate = craneLib.buildPackage {
-        src = craneLib.cleanCargoSource (craneLib.path ./.);
+      toolchain = pkgs.rust-bin.selectLatestNightlyWith (t: t.default);
+      craneLib = (crane.mkLib pkgs).overrideToolchain toolchain;
+
+      mkCrate = name: craneLib.buildPackage {
+        src = craneLib.cleanCargoSource (craneLib.path ./${name});
+        cargoLock = ./Cargo.lock;
         buildInputs = []
           ++ pkgs.lib.optionals pkgs.stdenv.isDarwin [
             pkgs.libiconv
           ];
       };
+
+      kra = mkCrate "kra";
     in {
       checks = {
-        inherit my-crate;
+        inherit kra;
       };
 
-      packages.default = my-crate;
+      packages = {
+        kra = kra;
+        default = self.packages.kra;
+      };
 
       devShells.default = pkgs.mkShell {
         inputsFrom = builtins.attrValues self.checks.${system};
@@ -50,7 +57,7 @@
         RUSTC_WRAPPER = "${pkgs.sccache}/bin/sccache";
 
         nativeBuildInputs = with pkgs; [
-          rustNightly
+          toolchain
           clippy
           rustfmt
           rust-analyzer

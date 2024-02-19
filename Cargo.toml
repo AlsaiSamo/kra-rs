@@ -1,14 +1,6 @@
-[package]
-name = "kra"
-version = "0.1.0"
-edition = "2021"
+[workspace]
+resolver = "2"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[dependencies]
-zip = "0.6"
-thiserror="1.0"
-getset="0.1.2"
-
-[dependencies.quick-xml]
-version = "0.31"
+members = [
+  "kra"
+]

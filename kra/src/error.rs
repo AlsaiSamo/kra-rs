@@ -89,6 +89,8 @@ impl MetadataErrorReason {
 #[derive(Error, Debug)]
 #[error("{file} at {buffer_pos}: {error}")]
 pub struct MetadataError {
+    //TODO: could be static? Or could be reused for parsing files in general, then
+    // it'll have to be nonstatic
     file: PathBuf,
     buffer_pos: usize,
     error: MetadataErrorReason,
