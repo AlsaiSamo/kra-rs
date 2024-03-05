@@ -62,6 +62,7 @@
           rustfmt
           rust-analyzer
           sccache
+          cargo-expand
         ];
       };
     });

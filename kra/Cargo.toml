@@ -9,6 +9,9 @@ edition = "2021"
 zip = "0.6"
 thiserror="1.0"
 getset="0.1.2"
+quick-xml = "0.31"
 
-[dependencies.quick-xml]
-version = "0.31"
+#TODO: publish the macro crate, then rewrite here
+#TODO: build-dependencies?
+[dependencies.kra-macro]
+path = "../kra-macro"
