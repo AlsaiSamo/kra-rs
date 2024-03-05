@@ -1,4 +1,4 @@
-//! Types to define layers.
+//! Nodes - layers and masks, and supporting structs.
 
 use std::{
     fmt::{self, Display},
@@ -6,6 +6,7 @@ use std::{
 };
 
 use getset::Getters;
+use kra_macro::ParseTag;
 use quick_xml::events::BytesStart;
 
 use crate::{
@@ -14,8 +15,6 @@ use crate::{
     metadata::Uuid,
     parse_attr, parse_bool, Colorspace,
 };
-
-// TODO: generate functions with a derive macro
 
 #[allow(missing_docs)]
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
@@ -387,55 +386,58 @@ pub enum InTimeline {
 
 pub type Onionskin = bool;
 
-#[derive(Getters)]
+#[derive(Getters, ParseTag)]
 #[getset(get = "pub", get_copy = "pub")]
 pub(crate) struct CommonNodeProps {
+    #[XmlAttr(
+        qname = "name",
+        pre_parse = "unescape_value()?.into()",
+        fun_override = "name"
+    )]
     name: String,
+    #[XmlAttr(
+        qname = "uuid",
+        pre_parse = "unescape_value()?",
+        fun_override = "Uuid::from_str(uuid.as_ref())?"
+    )]
     uuid: Uuid,
+    #[XmlAttr(
+        qname = "filename",
+        pre_parse = "unescape_value()?.into()",
+        fun_override = "filename"
+    )]
     filename: String,
+    #[XmlAttr(qname = "visible", fun_override = "parse_bool(visible)?")]
     visible: bool,
+    #[XmlAttr(qname = "locked", fun_override = "parse_bool(locked)?")]
     locked: bool,
+    #[XmlAttr(qname = "colorlabel", fun_override = "parse_attr(colorlabel)?")]
     colorlabel: u32,
+    #[XmlAttr(qname = "y", fun_override = "parse_attr(y)?")]
     y: u32,
+    #[XmlAttr(qname = "x", fun_override = "parse_attr(x)?")]
     x: u32,
+    #[XmlAttr(
+        qname = "intimeline",
+        pre_parse = "unescape_value()?",
+        fun_override = "parse_in_timeline(in_timeline.as_ref(), tag)?"
+    )]
     in_timeline: InTimeline,
 }
 
-impl CommonNodeProps {
-    pub(crate) fn parse_tag(tag: &BytesStart) -> Result<Self, MetadataErrorReason> {
-        let name = event_get_attr(tag, "name")?.unescape_value()?.into();
-        let uuid = event_get_attr(tag, "uuid")?.unescape_value()?;
-        let filename = event_get_attr(tag, "filename")?.unescape_value()?.into();
-        let visible = event_get_attr(tag, "visible")?;
-        let locked = event_get_attr(tag, "locked")?;
-        let colorlabel = event_get_attr(tag, "colorlabel")?;
-        let x = event_get_attr(tag, "x")?;
-        let y = event_get_attr(tag, "y")?;
-
-        let in_timeline = match event_get_attr(tag, "intimeline")?
-            .unescape_value()?
-            .as_ref()
-        {
-            "0" => InTimeline::False,
-            "1" => InTimeline::True(parse_bool(event_get_attr(tag, "onionskin")?)?),
-            what => {
-                return Err(MetadataErrorReason::XmlError(XmlError::ValueError(
-                    what.to_string(),
-                )))
-            }
-        };
-
-        Ok(CommonNodeProps {
-            name,
-            uuid: Uuid::from_str(uuid.as_ref())?,
-            filename,
-            visible: parse_bool(visible)?,
-            locked: parse_bool(locked)?,
-            colorlabel: parse_attr(colorlabel)?,
-            y: parse_attr(y)?,
-            x: parse_attr(x)?,
-            in_timeline,
-        })
+//parse InTimeline
+fn parse_in_timeline(input: &str, tag: &BytesStart) -> Result<InTimeline, MetadataErrorReason> {
+    match input {
+        "0" => Ok(InTimeline::False),
+        "1" => Ok(InTimeline::True(parse_bool(event_get_attr(
+            tag,
+            "onionskin",
+        )?)?)),
+        what => {
+            return Err(MetadataErrorReason::XmlError(XmlError::ValueError(
+                what.to_string(),
+            )))
+        }
     }
 }
 
@@ -458,36 +460,33 @@ pub enum NodeType {
 }
 
 /// Paint layer.
-#[derive(Debug, Getters)]
+#[derive(Debug, Getters, ParseTag)]
 #[getset(get = "pub", get_copy = "pub")]
 pub struct PaintLayerProps {
+    #[XmlAttr(qname = "compositeop", fun_override = "parse_attr(composite_op)?")]
     composite_op: CompositeOp,
+    #[XmlAttr(qname = "opacity", fun_override = "parse_attr(opacity)?")]
     opacity: u8,
+    #[XmlAttr(qname = "collapsed", fun_override = "parse_bool(collapsed)?")]
     collapsed: bool,
+    #[XmlAttr(
+        qname = "colorspacename",
+        pre_parse = "unescape_value()?",
+        fun_override = "Colorspace::try_from(colorspace.as_ref())?"
+    )]
     colorspace: Colorspace,
+    #[XmlAttr(
+        qname = "channellockflags",
+        pre_parse = "unescape_value()?.into_owned()",
+        fun_override = "channel_lock_flags"
+    )]
     channel_lock_flags: String,
+    #[XmlAttr(
+        qname = "channelflags",
+        pre_parse = "unescape_value()?.into()",
+        fun_override = "channel_flags"
+    )]
     channel_flags: String,
-}
-
-impl PaintLayerProps {
-    pub(crate) fn parse_tag(tag: &BytesStart) -> Result<Self, MetadataErrorReason> {
-        let composite_op = event_get_attr(tag, "compositeop")?;
-        let collapsed = event_get_attr(tag, "collapsed")?;
-        let opacity = event_get_attr(tag, "opacity")?;
-        let colorspace = event_get_attr(tag, "colorspacename")?.unescape_value()?;
-        let channel_lock_flags = event_get_attr(tag, "channellockflags")?
-            .unescape_value()?
-            .into_owned();
-        let channel_flags = event_get_attr(tag, "channelflags")?.unescape_value()?;
-        Ok(PaintLayerProps {
-            composite_op: parse_attr(composite_op)?,
-            opacity: parse_attr(opacity)?,
-            collapsed: parse_bool(collapsed)?,
-            colorspace: Colorspace::try_from(colorspace.as_ref())?,
-            channel_lock_flags,
-            channel_flags: channel_flags.into(),
-        })
-    }
 }
 
 /// Group layer.
@@ -500,42 +499,27 @@ pub struct GroupLayerProps {
     pub(crate) opacity: u8,
     pub(crate) layers: Vec<Node>,
 }
-// Group layers are more complex because they can have layers.
-// This requires either splitting the layers away, which would make structure confusing,
-// or giving reader and parse_layer() to the function, which, too, would be confusing.
-// So I will not make a parse_tag() for group layer props.
+// TODO: move group layer parsing here?
+// This would require adding extra arguments to the function, which should be doable
 
 /// Filter mask.
-#[derive(Debug, Getters)]
+#[derive(Debug, Getters, ParseTag)]
 #[getset(get = "pub", get_copy = "pub")]
 pub struct FilterMaskProps {
+    #[XmlAttr(
+        qname = "filtername",
+        fun_override = "filter_name.to_string()",
+        pre_parse = "unescape_value()?"
+    )]
     filter_name: String,
+    #[XmlAttr(qname = "filterversion", fun_override = "parse_attr(filter_version)?")]
     filter_version: usize,
 }
 
-impl FilterMaskProps {
-    pub(crate) fn parse_tag(tag: &BytesStart) -> Result<Self, MetadataErrorReason> {
-        let filter_version = event_get_attr(tag, "filterversion")?;
-        let filter_name = event_get_attr(tag, "filtername")?.unescape_value()?;
-        Ok(FilterMaskProps {
-            filter_name: filter_name.to_string(),
-            filter_version: parse_attr(filter_version)?,
-        })
-    }
-}
-
-/// Filter mask.
-#[derive(Debug, Getters)]
+/// Selection mask.
+#[derive(Debug, Getters, ParseTag)]
 #[getset(get = "pub", get_copy = "pub")]
 pub struct SelectionMaskProps {
+    #[XmlAttr(qname = "active", fun_override = "parse_bool(active)?")]
     active: bool,
-}
-
-impl SelectionMaskProps {
-    pub(crate) fn parse_tag(tag: &BytesStart) -> Result<Self, MetadataErrorReason> {
-        let active = event_get_attr(tag, "active")?;
-        Ok(SelectionMaskProps {
-            active: parse_bool(active)?,
-        })
-    }
 }
