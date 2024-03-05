@@ -72,14 +72,8 @@ fn gen_get_attr(item: &Field) -> [TokenStream2; 2] {
     let fun_override: syn::Expr =
         syn::parse_str(fun_override.as_str()).expect("could not parse function override");
     //TODO: default parsing behaviour
+
     // First part of output - statement to get attribute from XML
-    // let conversion_function = match item.ty {
-    //     //TODO: find better way to check the type
-    //     syn::Type::Path(ref path) if path.to_token_stream() == "bool".into() => {
-    //     }
-    //     //TODO: better error message (check if function override was provided?)
-    //     _ => panic!("type not supported for parsing"),
-    // };
     let tokens_first = match pre_parse {
         Some(pre_parse) => {
             let pre_parse: syn::Expr =
@@ -112,6 +106,7 @@ pub(crate) struct XmlAttr {
     // The string is parsed and then inserted as-is
     #[darling(default)]
     pub(crate) fun_override: Option<String>,
+    // Code to append immediately after data extraction (like unescape_value())
     pub(crate) pre_parse: Option<String>,
 }
 

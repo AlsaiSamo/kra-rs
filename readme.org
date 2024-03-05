@@ -9,7 +9,7 @@ This is a library for reading =.kra= files.
     2. GroupLayer
     3. FilterMask
     4. SelectionMask
-  - [ ] Does not support these layer types (but adding support should be easy):
+  - [ ] Does not support these layer types yet
     1. FileLayer
     2. FilterLayer
     3. FillLayer
@@ -26,14 +26,13 @@ This may change in the future.
 *** Rendering
 Rendering is best be left to a different crate.
 ** TODO Tasks
+*** NEXT Finish preparing other layers
+As noted [[*Reading][here]]
 *** NEXT Publishing
 + [ ] Docs
 + [ ] Tests
 + [ ] Examples
 *** CURRENT Refactoring
-+ [X] Generate parsing code instead of writing it by hand.
-  + [X] Write the necessary macros
-+ [ ] Rewrite parsing code to use the macro
 + [ ] Consider moving (or similar action) license and readme to =kra=, in some way
   - This is because the crate itself needs to have the license, at the source root, not at the repo's root.
   - Do note that =kra-macro= is to be published too, and it probably should be under the same license terms too.
