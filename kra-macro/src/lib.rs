@@ -63,7 +63,7 @@ fn gen_get_attr(item: &Field) -> [TokenStream2; 2] {
         // of not adding the attribute at all.
         .expect(format!("expected XmlAttr attribute on field {}", ident).as_str())
         .unwrap();
-    let qname = attr.qname;
+    let qname = attr.qname.unwrap_or(ident.to_string());
     //TODO: remove requirement for function override when default parsing is implemented
     let fun_override = attr
         .fun_override
@@ -106,7 +106,8 @@ fn gen_get_attr(item: &Field) -> [TokenStream2; 2] {
 #[derive(Debug, FromMeta)]
 pub(crate) struct XmlAttr {
     // QName of the attribute
-    pub(crate) qname: String,
+    // Default is to reuse field name
+    pub(crate) qname: Option<String>,
     // Parsing function override
     // The string is parsed and then inserted as-is
     #[darling(default)]

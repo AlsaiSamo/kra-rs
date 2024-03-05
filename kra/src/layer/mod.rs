@@ -389,33 +389,24 @@ pub type Onionskin = bool;
 #[derive(Getters, ParseTag)]
 #[getset(get = "pub", get_copy = "pub")]
 pub(crate) struct CommonNodeProps {
-    #[XmlAttr(
-        qname = "name",
-        pre_parse = "unescape_value()?.into()",
-        fun_override = "name"
-    )]
+    #[XmlAttr(pre_parse = "unescape_value()?.into()", fun_override = "name")]
     name: String,
     #[XmlAttr(
-        qname = "uuid",
         pre_parse = "unescape_value()?",
         fun_override = "Uuid::from_str(uuid.as_ref())?"
     )]
     uuid: Uuid,
-    #[XmlAttr(
-        qname = "filename",
-        pre_parse = "unescape_value()?.into()",
-        fun_override = "filename"
-    )]
+    #[XmlAttr(pre_parse = "unescape_value()?.into()", fun_override = "filename")]
     filename: String,
-    #[XmlAttr(qname = "visible", fun_override = "parse_bool(visible)?")]
+    #[XmlAttr(fun_override = "parse_bool(visible)?")]
     visible: bool,
-    #[XmlAttr(qname = "locked", fun_override = "parse_bool(locked)?")]
+    #[XmlAttr(fun_override = "parse_bool(locked)?")]
     locked: bool,
-    #[XmlAttr(qname = "colorlabel", fun_override = "parse_attr(colorlabel)?")]
+    #[XmlAttr(fun_override = "parse_attr(colorlabel)?")]
     colorlabel: u32,
-    #[XmlAttr(qname = "y", fun_override = "parse_attr(y)?")]
+    #[XmlAttr(fun_override = "parse_attr(y)?")]
     y: u32,
-    #[XmlAttr(qname = "x", fun_override = "parse_attr(x)?")]
+    #[XmlAttr(fun_override = "parse_attr(x)?")]
     x: u32,
     #[XmlAttr(
         qname = "intimeline",
@@ -465,9 +456,9 @@ pub enum NodeType {
 pub struct PaintLayerProps {
     #[XmlAttr(qname = "compositeop", fun_override = "parse_attr(composite_op)?")]
     composite_op: CompositeOp,
-    #[XmlAttr(qname = "opacity", fun_override = "parse_attr(opacity)?")]
+    #[XmlAttr(fun_override = "parse_attr(opacity)?")]
     opacity: u8,
-    #[XmlAttr(qname = "collapsed", fun_override = "parse_bool(collapsed)?")]
+    #[XmlAttr(fun_override = "parse_bool(collapsed)?")]
     collapsed: bool,
     #[XmlAttr(
         qname = "colorspacename",
@@ -520,6 +511,6 @@ pub struct FilterMaskProps {
 #[derive(Debug, Getters, ParseTag)]
 #[getset(get = "pub", get_copy = "pub")]
 pub struct SelectionMaskProps {
-    #[XmlAttr(qname = "active", fun_override = "parse_bool(active)?")]
+    #[XmlAttr(fun_override = "parse_bool(active)?")]
     active: bool,
 }
