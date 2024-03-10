@@ -8,7 +8,7 @@ use kra::{
 //print all nodes, recursively
 fn tree(node: &Node, depth: usize) {
     println!("{:>width$}{1}", " ", node, width = depth * 4);
-    if let NodeType::GroupLayer(props) = node.props().node_type() {
+    if let NodeType::GroupLayer(props) = node.node_type() {
         for i in props.layers() {
             tree(i, depth + 1)
         }

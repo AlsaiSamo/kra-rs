@@ -28,7 +28,7 @@ use std::{
 use error::{MetadataErrorReason, ReadKraError, UnknownColorspace, UnknownLayerType, XmlError};
 use getset::Getters;
 use layer::{
-    CommonNodeProps, FilterMaskProps, GroupLayerProps, Node, NodeProps, NodeType, PaintLayerProps,
+    CommonNodeProps, FilterMaskProps, GroupLayerProps, Node, NodeType, PaintLayerProps,
     SelectionMaskProps,
 };
 use metadata::ImageMetadata;
@@ -316,10 +316,7 @@ fn parse_layer(reader: &mut XmlReader<&[u8]>) -> Result<Node, MetadataErrorReaso
         (true, _) => Some(parse_mask(reader)?),
     };
 
-    Ok(Node::new(
-        NodeProps::from_parts(common, masks, node_type),
-        None,
-    ))
+    Ok(Node::new(common, masks, node_type))
 }
 
 fn get_layers(reader: &mut XmlReader<&[u8]>) -> Result<Vec<Node>, MetadataErrorReason> {
@@ -388,8 +385,7 @@ fn parse_mask(reader: &mut XmlReader<&[u8]>) -> Result<Vec<Node>, MetadataErrorR
                     }
                 };
 
-                let props = NodeProps::from_parts(common, None, node_type);
-                masks.push(Node::new(props, None))
+                masks.push(Node::new(common, None, node_type))
             }
             other => {
                 return Err(MetadataErrorReason::XmlError(XmlError::EventError(

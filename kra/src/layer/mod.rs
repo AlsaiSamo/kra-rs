@@ -317,31 +317,10 @@ impl FromStr for CompositeOp {
     }
 }
 
-/// One node of the image.
+/// One node (layer or mask) of the image.
 #[derive(Debug, Getters)]
 #[getset(get = "pub", get_copy = "pub")]
 pub struct Node {
-    props: NodeProps,
-    //TODO: for clone layer, should this exist here?
-    image: Option<Vec<u8>>,
-}
-
-impl Display for Node {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{0}: {1}", self.props.uuid, self.props.name)
-    }
-}
-
-impl Node {
-    pub(crate) fn new(props: NodeProps, image: Option<Vec<u8>>) -> Self {
-        Node { props, image }
-    }
-}
-
-/// Node properties.
-#[derive(Debug, Getters)]
-#[getset(get = "pub", get_copy = "pub")]
-pub struct NodeProps {
     name: String,
     uuid: Uuid,
     filename: String,
@@ -359,13 +338,19 @@ pub struct NodeProps {
     masks: Option<Vec<Node>>,
 }
 
-impl NodeProps {
-    pub(crate) fn from_parts(
+impl Display for Node {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{0}: {1}", self.uuid, self.name)
+    }
+}
+
+impl Node {
+    pub(crate) fn new(
         common: CommonNodeProps,
         masks: Option<Vec<Node>>,
         node_type: NodeType,
     ) -> Self {
-        NodeProps {
+        Node {
             name: common.name,
             uuid: common.uuid,
             filename: common.filename,
