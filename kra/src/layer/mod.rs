@@ -330,10 +330,7 @@ pub struct Node {
     y: u32,
     x: u32,
     in_timeline: InTimeline,
-    //TODO: masks can't have masks
-    // Because it implies that the mask's event is
-    // always closed, the field will always be None.
-    // Still, should consider moving it out.
+    //NOTE: masks can't have masks
     masks: Option<Vec<Node>>,
 }
 

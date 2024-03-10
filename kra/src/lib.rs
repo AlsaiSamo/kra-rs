@@ -122,7 +122,6 @@ impl KraFile {
     }
 }
 
-// TODO: write a macro for some of them?
 // These are helper functions to declutter main code
 #[inline]
 pub(crate) fn next_xml_event<'a>(reader: &mut XmlReader<&'a [u8]>) -> Result<Event<'a>, XmlError> {
@@ -148,15 +147,6 @@ pub(crate) fn event_unwrap_as_start(event: Event) -> Result<BytesStart, XmlError
             "start event",
             event_to_string(&other)?,
         )),
-    }
-}
-
-//TODO: remove?
-#[inline]
-pub(crate) fn event_unwrap_as_text(event: Event) -> Result<BytesText, XmlError> {
-    match event {
-        Event::Text(event) => Ok(event),
-        other => Err(XmlError::EventError("text event", event_to_string(&other)?)),
     }
 }
 
