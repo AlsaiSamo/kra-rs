@@ -8,12 +8,11 @@ use std::{
 use getset::Getters;
 use kra_macro::ParseTag;
 use quick_xml::events::BytesStart;
+use uuid::Uuid;
 
 use crate::{
     error::{MetadataErrorReason, UnknownCompositeOp, XmlError},
-    event_get_attr,
-    metadata::Uuid,
-    parse_attr, parse_bool, Colorspace,
+    event_get_attr, parse_attr, parse_bool, Colorspace,
 };
 
 /// Composition operator.

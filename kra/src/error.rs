@@ -11,7 +11,7 @@ pub struct UnknownColorspace(pub(crate) String);
 
 #[derive(Error, Debug, PartialEq, Eq, Clone, Hash)]
 #[error("failed to parse UUID: {0}")]
-pub struct ParseUuidError(pub(crate) String);
+pub struct ParseUuidError(uuid::Error);
 
 #[derive(Error, Debug, PartialEq, Eq, Clone, Hash)]
 #[error("unknown compositeop: {0}")]
@@ -71,6 +71,12 @@ impl From<quick_xml::Error> for MetadataErrorReason {
 impl From<FromUtf8Error> for MetadataErrorReason {
     fn from(value: FromUtf8Error) -> Self {
         MetadataErrorReason::XmlError(XmlError::EncodingError(value))
+    }
+}
+
+impl From<uuid::Error> for MetadataErrorReason {
+    fn from(value: uuid::Error) -> Self {
+        MetadataErrorReason::ParseUuidError(ParseUuidError(value))
     }
 }
 

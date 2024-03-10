@@ -32,6 +32,7 @@ use layer::{
     SelectionMaskProps,
 };
 use metadata::ImageMetadata;
+use uuid::Uuid;
 use zip::ZipArchive;
 
 use quick_xml::{

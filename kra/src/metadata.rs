@@ -22,48 +22,6 @@ const DOCUMENTINFO_XMLNS: &str = r"http://www.calligra.org/DTD/document-info";
 const SYNTAX_VERSION: &str = "2.0";
 const MIMETYPE: &str = "application/x-kra";
 
-/// UUID of layers, stored without dashes.
-#[derive(Debug, PartialEq, Eq, Clone, Hash)]
-pub struct Uuid([u8; 32]);
-
-impl FromStr for Uuid {
-    type Err = ParseUuidError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if !s.is_ascii() {
-            return Err(ParseUuidError(s.to_owned()));
-        };
-        let bytes = s.as_bytes();
-        let p1 = &bytes[1..9];
-        let p2 = &bytes[10..14];
-        let p3 = &bytes[15..19];
-        let p4 = &bytes[20..24];
-        let p5 = &bytes[25..=36];
-        let ret = p1
-            .iter()
-            .chain(p2.iter())
-            .chain(p3.iter())
-            .chain(p4.iter())
-            .chain(p5.iter())
-            .copied()
-            .collect::<Vec<u8>>();
-        Ok(Uuid(
-            ret.try_into().map_err(|_| ParseUuidError(s.to_owned()))?,
-        ))
-    }
-}
-
-impl<'a> Display for Uuid {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let u1 = str::from_utf8(&self.0[0..8]).map_err(|_| fmt::Error)?;
-        let u2 = str::from_utf8(&self.0[8..12]).map_err(|_| fmt::Error)?;
-        let u3 = str::from_utf8(&self.0[12..16]).map_err(|_| fmt::Error)?;
-        let u4 = str::from_utf8(&self.0[16..20]).map_err(|_| fmt::Error)?;
-        let u5 = str::from_utf8(&self.0[20..32]).map_err(|_| fmt::Error)?;
-        write!(f, "{}-{}-{}-{}-{}", u1, u2, u3, u4, u5)
-    }
-}
-
 //TODO: since image metadata is split into two parts,
 // create ImageMetadataEnd with all required functions,
 // then rename ImageMetadata into ImageMetadataStart,
