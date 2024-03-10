@@ -16,6 +16,7 @@ use crate::{
     parse_attr, parse_bool, Colorspace,
 };
 
+/// Composition operator.
 #[allow(missing_docs)]
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 #[non_exhaustive]
@@ -316,10 +317,12 @@ impl FromStr for CompositeOp {
     }
 }
 
+/// One node of the image.
 #[derive(Debug, Getters)]
 #[getset(get = "pub", get_copy = "pub")]
 pub struct Node {
     props: NodeProps,
+    //TODO: for clone layer, should this exist here?
     image: Option<Vec<u8>>,
 }
 
@@ -335,7 +338,7 @@ impl Node {
     }
 }
 
-// properties common to all nodes + properties that are node-specific
+/// Node properties.
 #[derive(Debug, Getters)]
 #[getset(get = "pub", get_copy = "pub")]
 pub struct NodeProps {
@@ -378,12 +381,16 @@ impl NodeProps {
     }
 }
 
+/// Visibility of a node in the timeline.
 #[derive(Debug)]
 pub enum InTimeline {
+    /// Node is visible in timeline.
     True(Onionskin),
+    /// Node is not visible.
     False,
 }
 
+/// Whether onionskinning is enabled.
 pub type Onionskin = bool;
 
 #[derive(Getters, ParseTag)]
@@ -436,10 +443,14 @@ fn parse_in_timeline(input: &str, tag: &BytesStart) -> Result<InTimeline, Metada
 #[derive(Debug)]
 #[non_exhaustive]
 pub enum NodeType {
+    /// Paint layer.
     PaintLayer(PaintLayerProps),
+    /// Group layer, which contains other layers.
     GroupLayer(GroupLayerProps),
+    /// Layer that links to a file in the file system.
     FileLayer,
     FilterLayer,
+    /// Layer that fills the image with a color.
     FillLayer,
     CloneLayer,
     VectorLayer,
@@ -450,7 +461,7 @@ pub enum NodeType {
     ColorizeMask,
 }
 
-/// Paint layer.
+/// Properties specific to paint layer.
 #[derive(Debug, Getters, ParseTag)]
 #[getset(get = "pub", get_copy = "pub")]
 pub struct PaintLayerProps {
@@ -480,7 +491,7 @@ pub struct PaintLayerProps {
     channel_flags: String,
 }
 
-/// Group layer.
+/// Properties specific to group layer.
 #[derive(Debug, Getters)]
 #[getset(get = "pub", get_copy = "pub")]
 pub struct GroupLayerProps {
@@ -493,21 +504,21 @@ pub struct GroupLayerProps {
 // TODO: move group layer parsing here?
 // This would require adding extra arguments to the function, which should be doable
 
-/// Filter mask.
+/// Properties specific to filter mask.
 #[derive(Debug, Getters, ParseTag)]
 #[getset(get = "pub", get_copy = "pub")]
 pub struct FilterMaskProps {
     #[XmlAttr(
         qname = "filtername",
-        fun_override = "filter_name.to_string()",
-        pre_parse = "unescape_value()?"
+        pre_parse = "unescape_value()?",
+        fun_override = "filter_name.to_string()"
     )]
     filter_name: String,
     #[XmlAttr(qname = "filterversion", fun_override = "parse_attr(filter_version)?")]
     filter_version: usize,
 }
 
-/// Selection mask.
+/// Properties specific to selection mask.
 #[derive(Debug, Getters, ParseTag)]
 #[getset(get = "pub", get_copy = "pub")]
 pub struct SelectionMaskProps {
