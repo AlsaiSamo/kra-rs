@@ -10,12 +10,14 @@
 
 #![warn(missing_docs)]
 
+pub mod data;
 pub mod error;
 pub mod layer;
 pub mod metadata;
 
 use std::{
     borrow::Cow,
+    collections::HashMap,
     fmt::{self, Display},
     fs::File,
     io::Read,
@@ -23,6 +25,7 @@ use std::{
     str::FromStr,
 };
 
+use data::NodeData;
 use error::{MetadataErrorReason, ReadKraError, UnknownColorspace, UnknownLayerType, XmlError};
 use getset::Getters;
 use layer::{
@@ -79,6 +82,7 @@ pub struct KraFile {
     pub(crate) meta_end: ImageMetadataEnd,
     pub(crate) doc_info: DocumentInfo,
     pub(crate) layers: Vec<Node>,
+    pub(crate) files: HashMap<Uuid, NodeData>,
     //TODO: mergedimage and preview
 }
 
@@ -131,6 +135,8 @@ impl KraFile {
             meta_end,
             doc_info,
             layers,
+            //TODO: fill out
+            files: HashMap::new(),
         })
     }
 }
