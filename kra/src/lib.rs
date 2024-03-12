@@ -40,6 +40,7 @@ use quick_xml::{
 
 use crate::metadata::DocumentInfo;
 
+//TODO: move out?
 /// Colorspace identifier.
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 #[non_exhaustive]
@@ -73,16 +74,19 @@ impl Display for Colorspace {
 #[derive(Debug, Getters)]
 #[getset(get = "pub")]
 pub struct KraFile {
-    //TODO: allow storing the file, optionally?
-    //file: Option(ZipArchive<File>),
+    pub(crate) file: Option<ZipArchive<File>>,
     pub(crate) meta: ImageMetadata,
     pub(crate) meta_end: ImageMetadataEnd,
     pub(crate) doc_info: DocumentInfo,
     pub(crate) layers: Vec<Node>,
-    //TODO: properties after layers
+    //TODO: mergedimage and preview
 }
 
 impl KraFile {
+    //TODO: the function should load all files except mergedimage and preview,
+    // and including file layers, and does not store the file.
+    // TODO: builder for customised read()
+    // TODO: mention all of this in the documentation.
     /// Open and parse `.kra` file.
     pub fn read<P: AsRef<Path>>(path: P) -> Result<Self, ReadKraError> {
         let file = File::open(path)?;
@@ -122,6 +126,7 @@ impl KraFile {
             .map_err(|err| err.to_metadata_error("maindoc.xml".into(), &maindoc))?;
 
         Ok(KraFile {
+            file: None,
             meta,
             meta_end,
             doc_info,

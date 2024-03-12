@@ -223,7 +223,6 @@ pub struct DocInfoAbout {
     keyword: String,
     initial_creator: String,
     editing_cycles: String,
-    //TODO: as timestamps?
     editing_time: String,
     date: String,
     creation_date: String,
