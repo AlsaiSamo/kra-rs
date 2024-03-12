@@ -8,8 +8,6 @@
 //!
 //! The library is far from being finished at the current moment.
 
-//TODO: remove feature dependency? when possible
-#![feature(iterator_try_collect)]
 #![warn(missing_docs)]
 
 pub mod error;
@@ -89,7 +87,12 @@ impl KraFile {
         let file = File::open(path)?;
         let mut zip = ZipArchive::new(file)?;
 
-        let mimetype: Vec<u8> = zip.by_name("mimetype")?.bytes().try_collect()?;
+        //Replacement of try_collect(), which is unstable
+        let mimetype: Vec<u8> = zip
+            .by_name("mimetype")?
+            .bytes()
+            .into_iter()
+            .collect::<Result<Vec<_>, _>>()?;
         if mimetype.as_slice() != r"application/x-krita".as_bytes() {
             return Err(ReadKraError::MimetypeMismatch);
         }
