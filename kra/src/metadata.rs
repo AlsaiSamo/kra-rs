@@ -1,17 +1,14 @@
 //! Types that make up file's metadata
 
-use std::{
-    fmt::{self, Display},
-    str,
-    str::FromStr,
-};
+use std::fmt::{self, Display};
 
 use quick_xml::{events::Event, reader::Reader as XmlReader};
 
 use crate::{
-    error::{MetadataErrorReason, ParseUuidError, XmlError},
-    event_get_attr, event_to_string, event_unwrap_as_doctype, event_unwrap_as_end,
-    event_unwrap_as_start, get_text_between_tags, next_xml_event, parse_attr, Colorspace,
+    error::{MetadataErrorReason, XmlError},
+    event_get_attr, event_to_string, event_unwrap_as_doctype, event_unwrap_as_empty,
+    event_unwrap_as_end, event_unwrap_as_start, get_text_between_tags, next_xml_event, parse_attr,
+    push_and_parse_value, Colorspace,
 };
 
 const MAINDOC_DOCTYPE: &str =
@@ -137,24 +134,84 @@ impl ImageMetadata {
 
 // contains data from the end of maindoc.xml
 // TODO: add proper types
+/// Data at the end of `maindoc.xml`
+#[derive(Debug, PartialEq, Eq, Clone, Hash)]
 pub(crate) struct ImageMetadataEnd {
-    pub(crate) ProjectionBackgroundColor: String,
-    pub(crate) GlobalAssistantsColor: String,
-    pub(crate) MirrorAxis: MirrorAxis,
+    /// Projection background color.
+    pub(crate) projection_background_color: String,
+    /// Global assistants color.
+    pub(crate) global_assistants_color: String,
+    /// Mirror axis configuration.
+    pub(crate) mirror_axis: MirrorAxis,
 }
 
-// TODO: add proper types
+impl ImageMetadataEnd {
+    pub(crate) fn from_xml(reader: &mut XmlReader<&[u8]>) -> Result<Self, MetadataErrorReason> {
+        //<ProjectionBackgroundColor ... />
+        let event = next_xml_event(reader)?;
+        let tag = event_unwrap_as_empty(event)?;
+        let projection_background_color = parse_attr(event_get_attr(&tag, "ColorData")?)?;
+        let event = next_xml_event(reader)?;
+        let tag = event_unwrap_as_empty(event)?;
+        let global_assistants_color = parse_attr(event_get_attr(&tag, "SimpleColorData")?)?;
+        let mirror_axis = MirrorAxis::from_xml(reader)?;
+
+        Ok(ImageMetadataEnd {
+            projection_background_color,
+            global_assistants_color,
+            mirror_axis,
+        })
+    }
+}
+
+//TODO: check types
+#[derive(Debug, PartialEq, Eq, Clone, Hash)]
 pub(crate) struct MirrorAxis {
-    pub(crate) mirrorHorizontal: u32,
-    pub(crate) mirrorVertical: u32,
-    pub(crate) lockHorizontal: u32,
-    pub(crate) lockVertical: u32,
-    pub(crate) hideHorizontalDecoration: u32,
-    pub(crate) hideVerticalDecoration: u32,
-    pub(crate) handleSize: u32,
-    pub(crate) horizontalHandlePosition: u32,
-    pub(crate) verticalHandlePosition: u32,
-    pub(crate) axisPosition: [u32; 2],
+    pub(crate) mirror_horizontal: u32,
+    pub(crate) mirror_vertical: u32,
+    pub(crate) lock_horizontal: u32,
+    pub(crate) lock_vertical: u32,
+    pub(crate) hide_horizontal_decoration: u32,
+    pub(crate) hide_vertical_decoration: u32,
+    pub(crate) handle_size: u32,
+    pub(crate) horizontal_handle_position: u32,
+    pub(crate) vertical_handle_position: u32,
+    pub(crate) axis_position: [u32; 2],
+}
+
+impl MirrorAxis {
+    pub(crate) fn from_xml(reader: &mut XmlReader<&[u8]>) -> Result<Self, MetadataErrorReason> {
+        // <MirrorAxis>
+        next_xml_event(reader)?;
+
+        let mirror_horizontal = push_and_parse_value(reader)?;
+        let mirror_vertical = push_and_parse_value(reader)?;
+        let lock_horizontal = push_and_parse_value(reader)?;
+        let lock_vertical = push_and_parse_value(reader)?;
+        let hide_horizontal_decoration = push_and_parse_value(reader)?;
+        let hide_vertical_decoration = push_and_parse_value(reader)?;
+        let handle_size = push_and_parse_value(reader)?;
+        let horizontal_handle_position = push_and_parse_value(reader)?;
+        let vertical_handle_position = push_and_parse_value(reader)?;
+
+        let event = next_xml_event(reader)?;
+        let tag = event_unwrap_as_empty(event)?;
+        let x = event_get_attr(&tag, "x")?;
+        let y = event_get_attr(&tag, "y")?;
+
+        Ok(MirrorAxis {
+            mirror_horizontal,
+            mirror_vertical,
+            lock_horizontal,
+            lock_vertical,
+            hide_horizontal_decoration,
+            hide_vertical_decoration,
+            handle_size,
+            horizontal_handle_position,
+            vertical_handle_position,
+            axis_position: [parse_attr(x)?, parse_attr(y)?],
+        })
+    }
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]

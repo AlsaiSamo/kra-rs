@@ -29,7 +29,7 @@ use layer::{
     CommonNodeProps, FilterMaskProps, GroupLayerProps, Node, NodeType, PaintLayerProps,
     SelectionMaskProps,
 };
-use metadata::ImageMetadata;
+use metadata::{ImageMetadata, ImageMetadataEnd};
 use uuid::Uuid;
 use zip::ZipArchive;
 
@@ -76,6 +76,7 @@ pub struct KraFile {
     //TODO: allow storing the file, optionally?
     //file: Option(ZipArchive<File>),
     pub(crate) meta: ImageMetadata,
+    pub(crate) meta_end: ImageMetadataEnd,
     pub(crate) doc_info: DocumentInfo,
     pub(crate) layers: Vec<Node>,
     //TODO: properties after layers
@@ -117,8 +118,12 @@ impl KraFile {
         let layers = get_layers(&mut maindoc)
             .map_err(|err| err.to_metadata_error("maindoc".into(), &maindoc))?;
 
+        let meta_end = ImageMetadataEnd::from_xml(&mut maindoc)
+            .map_err(|err| err.to_metadata_error("maindoc.xml".into(), &maindoc))?;
+
         Ok(KraFile {
             meta,
+            meta_end,
             doc_info,
             layers,
         })
@@ -146,6 +151,17 @@ pub(crate) fn event_unwrap_as_doctype(event: Event) -> Result<BytesText, XmlErro
 pub(crate) fn event_unwrap_as_start(event: Event) -> Result<BytesStart, XmlError> {
     match event {
         Event::Start(event) => Ok(event),
+        other => Err(XmlError::EventError(
+            "start event",
+            event_to_string(&other)?,
+        )),
+    }
+}
+
+#[inline]
+pub(crate) fn event_unwrap_as_empty(event: Event) -> Result<BytesStart, XmlError> {
+    match event {
+        Event::Empty(event) => Ok(event),
         other => Err(XmlError::EventError(
             "start event",
             event_to_string(&other)?,
@@ -194,6 +210,19 @@ pub(crate) fn parse_bool(attr: Attribute) -> Result<bool, XmlError> {
         "0" => Ok(false),
         what => Err(XmlError::ValueError(what.to_string())),
     }
+}
+
+// gets next event and parses its value
+#[inline]
+pub(crate) fn push_and_parse_value<T>(reader: &mut XmlReader<&[u8]>) -> Result<T, XmlError>
+where
+    T: FromStr,
+    <T as FromStr>::Err: Display,
+{
+    let event = next_xml_event(reader)?;
+    let tag = event_unwrap_as_empty(event)?;
+    let attr = event_get_attr(&tag, "value")?;
+    Ok(parse_attr::<T>(attr)?)
 }
 
 //Starts immed. before the start tag
