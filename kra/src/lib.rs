@@ -294,46 +294,7 @@ fn parse_layer(reader: &mut XmlReader<&[u8]>) -> Result<Node, MetadataErrorReaso
     let node_type = event_get_attr(&tag, "nodetype")?.unescape_value()?;
     let node_type = match node_type.as_ref() {
         //TODO: other node types
-
-        // Group layers are special in that they contain other layers.
-        // This makes it impossible to simply parse the tag and get all info.
-        "grouplayer" => {
-            let composite_op = event_get_attr(&tag, "compositeop")?;
-            let collapsed = event_get_attr(&tag, "collapsed")?;
-            let passthrough = event_get_attr(&tag, "passthrough")?;
-            let opacity = event_get_attr(&tag, "opacity")?;
-            let mut layers: Vec<Node> = Vec::new();
-
-            //<layers>
-            let event = next_xml_event(reader)?;
-            event_unwrap_as_start(event)?;
-
-            loop {
-                match parse_layer(reader) {
-                    Ok(layer) => layers.push(layer),
-                    Err(MetadataErrorReason::XmlError(XmlError::EventError(a, ref b)))
-                        // This assumes that we have hit </layers>
-                        if (a == "layer/mask start event" && b == "layers") =>
-                    {
-                        break
-                    }
-                    //Actual error
-                    Err(other) => return Err(other),
-                }
-            }
-
-            //</layer>
-            let event = next_xml_event(reader)?;
-            event_unwrap_as_end(event)?;
-
-            NodeType::GroupLayer(GroupLayerProps {
-                composite_op: parse_attr(composite_op)?,
-                collapsed: parse_bool(collapsed)?,
-                passthrough: parse_bool(passthrough)?,
-                opacity: parse_attr(opacity)?,
-                layers,
-            })
-        }
+        "grouplayer" => NodeType::GroupLayer(GroupLayerProps::parse_tag(&tag, reader)?),
         "paintlayer" => NodeType::PaintLayer(PaintLayerProps::parse_tag(&tag)?),
         "filtermask" => NodeType::FilterMask(FilterMaskProps::parse_tag(&tag)?),
         "selectionmask" => NodeType::SelectionMask(SelectionMaskProps::parse_tag(&tag)?),

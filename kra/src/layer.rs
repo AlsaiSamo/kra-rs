@@ -473,17 +473,50 @@ pub struct PaintLayerProps {
 }
 
 /// Properties specific to group layer.
-#[derive(Debug, Getters)]
+#[derive(Debug, Getters, ParseTag)]
 #[getset(get = "pub", get_copy = "pub")]
+#[ExtraArgs(extra_args = "reader: &mut quick_xml::Reader<&[u8]>")]
 pub struct GroupLayerProps {
+    #[XmlAttr(qname = "compositeop", fun_override = "parse_attr(composite_op)?")]
     pub(crate) composite_op: CompositeOp,
+    #[XmlAttr(fun_override = "parse_bool(collapsed)?")]
     pub(crate) collapsed: bool,
+    #[XmlAttr(fun_override = "parse_bool(passthrough)?")]
     pub(crate) passthrough: bool,
+    #[XmlAttr(fun_override = "parse_attr(opacity)?")]
     pub(crate) opacity: u8,
+    #[XmlAttr(extract_data = false, fun_override = "group_get_layers(reader)?")]
     pub(crate) layers: Vec<Node>,
 }
-// TODO: move group layer parsing here?
-// This would require adding extra arguments to the function, which should be doable
+
+// Go over layers in the group, stopping at </layer>
+fn group_get_layers(
+    reader: &mut quick_xml::Reader<&[u8]>,
+) -> Result<Vec<Node>, MetadataErrorReason> {
+    let mut layers: Vec<Node> = Vec::new();
+    //<layers>
+    let event = next_xml_event(reader)?;
+    event_unwrap_as_start(event)?;
+
+    loop {
+        match parse_layer(reader) {
+            Ok(layer) => layers.push(layer),
+            Err(MetadataErrorReason::XmlError(XmlError::EventError(a, ref b)))
+            // This assumes that we have hit </layers>
+                if (a == "layer/mask start event" && b == "layers") =>
+            {
+                break
+            }
+            //Actual error
+            Err(other) => return Err(other),
+        }
+    }
+
+    //</layer>
+    let event = next_xml_event(reader)?;
+    event_unwrap_as_end(event)?;
+    Ok(layers)
+}
 
 /// Properties specific to filter mask.
 #[derive(Debug, Getters, ParseTag)]

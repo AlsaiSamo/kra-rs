@@ -6,7 +6,7 @@ use syn::{Data, DeriveInput, Field};
 
 //TODO: make it look pretty and test properly
 
-#[proc_macro_derive(ParseTag, attributes(XmlAttr))]
+#[proc_macro_derive(ParseTag, attributes(XmlAttr, ExtraArgs))]
 pub fn parse_tag(item: TokenStream) -> TokenStream {
     let item = syn::parse_macro_input!(item as DeriveInput);
     let ident = item.ident;
@@ -30,9 +30,22 @@ pub fn parse_tag(item: TokenStream) -> TokenStream {
         .collect();
     let tokens_first = tokens.iter().step_by(2);
     let tokens_second = tokens.iter().skip(1).step_by(2);
+    // Extra args
+    let extra_args: TokenStream2 = syn::parse_str(&match item
+        .attrs
+        .iter()
+        .map(|x| ExtraArgs::from_meta(&x.meta))
+        .find(|x| x.is_ok())
+    {
+        Some(Ok(ExtraArgs {
+            extra_args: Some(args),
+        })) => format!(", {}", args),
+        _ => String::default(),
+    })
+    .unwrap_or(TokenStream2::default());
     quote! {
         impl #ident {
-            pub(crate) fn parse_tag(tag: &BytesStart) -> Result<Self, MetadataErrorReason> {
+            pub(crate) fn parse_tag(tag: &BytesStart #extra_args) -> Result<Self, MetadataErrorReason> {
                 #( #tokens_first )*
                 Ok(#ident {
                     #( #tokens_second ),*
@@ -69,26 +82,25 @@ fn gen_get_attr(item: &Field) -> [TokenStream2; 2] {
         .fun_override
         .expect("currently, defining fun_override is necessary");
     let pre_parse = attr.pre_parse;
+    let extract_data = attr.extract_data;
     let fun_override: syn::Expr =
         syn::parse_str(fun_override.as_str()).expect("could not parse function override");
     //TODO: default parsing behaviour
 
     // First part of output - statement to get attribute from XML
-    let tokens_first = match pre_parse {
-        Some(pre_parse) => {
+    let tokens_first = match (extract_data, pre_parse) {
+        (Some(false), _) => TokenStream2::default(),
+        (_, Some(pre_parse)) => {
             let pre_parse: syn::Expr =
                 syn::parse_str(pre_parse.as_str()).expect("could not parse pre-parsing code");
             quote! {
                 let #ident = event_get_attr(&tag, #qname)?.#pre_parse;
             }
         }
-        None => quote! {
+        (_, None) => quote! {
             let #ident = event_get_attr(&tag, #qname)?;
         },
     };
-    // let tokens_first = quote! {
-    //     let #ident = event_get_attr(&tag, #qname)?;
-    // };
     // TODO: replace fun_override with a parser that is chosen beforehand (default or override)
     let tokens_second = quote! {
         #ident: #fun_override
@@ -108,6 +120,14 @@ pub(crate) struct XmlAttr {
     pub(crate) fun_override: Option<String>,
     // Code to append immediately after data extraction (like unescape_value())
     pub(crate) pre_parse: Option<String>,
+    // Allow not including data extraction
+    pub(crate) extract_data: Option<bool>,
+}
+
+// Attribute to add extra arguments for the resulting function
+#[derive(Debug, FromMeta)]
+pub(crate) struct ExtraArgs {
+    pub(crate) extra_args: Option<String>,
 }
 
 #[cfg(test)]
