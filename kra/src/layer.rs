@@ -2,6 +2,7 @@
 
 use std::{
     fmt::{self, Display},
+    path::PathBuf,
     str::FromStr,
 };
 
@@ -433,17 +434,17 @@ pub enum NodeType {
     /// Group layer, which contains other layers.
     GroupLayer(GroupLayerProps),
     /// Layer that links to a file in the file system.
-    FileLayer,
-    FilterLayer,
+    FileLayer(FileLayerProps),
+    FilterLayer(FilterLayerProps),
     /// Layer that fills the image with a color.
-    FillLayer,
-    CloneLayer,
-    VectorLayer,
-    TransparencyMask,
+    FillLayer(FillLayerProps),
+    CloneLayer(CloneLayerProps),
+    VectorLayer(VectorLayerProps),
+    TransparencyMask(TransparencyMaskProps),
     FilterMask(FilterMaskProps),
-    TransformMask,
+    TransformMask(TransformMaskProps),
     SelectionMask(SelectionMaskProps),
-    ColorizeMask,
+    ColorizeMask(ColorizeMaskProps),
 }
 
 /// Properties specific to paint layer.
@@ -533,7 +534,7 @@ pub struct FilterMaskProps {
     )]
     filter_name: String,
     #[XmlAttr(qname = "filterversion", fun_override = "parse_attr(filter_version)?")]
-    filter_version: usize,
+    filter_version: u32,
 }
 
 /// Properties specific to selection mask.
@@ -542,4 +543,211 @@ pub struct FilterMaskProps {
 pub struct SelectionMaskProps {
     #[XmlAttr(fun_override = "parse_bool(active)?")]
     active: bool,
+}
+
+#[derive(Debug, Getters, ParseTag)]
+#[getset(get = "pub", get_copy = "pub")]
+pub struct FileLayerProps {
+    #[XmlAttr(fun_override = "parse_bool(collapsed)?")]
+    collapsed: bool,
+    //TODO: enum
+    #[XmlAttr(
+        qname = "scalingfilter",
+        pre_parse = "unescape_value()?.into()",
+        fun_override = "scaling_filter"
+    )]
+    scaling_filter: String,
+    // parse_attr() because this bool is true/false
+    #[XmlAttr(fun_override = "parse_attr(scale)?")]
+    scale: bool,
+    #[XmlAttr(qname = "compositeop", fun_override = "parse_attr(composite_op)?")]
+    composite_op: CompositeOp,
+    #[XmlAttr(fun_override = "parse_attr(opacity)?")]
+    opacity: u8,
+    #[XmlAttr(
+        qname = "colorspacename",
+        pre_parse = "unescape_value()?",
+        fun_override = "Colorspace::try_from(colorspace.as_ref())?"
+    )]
+    colorspace: Colorspace,
+    //TODO: figure out correct type
+    #[XmlAttr(qname = "scalingmethod", fun_override = "parse_attr(scaling_method)?")]
+    scaling_method: u32,
+    #[XmlAttr(
+        qname = "source",
+        pre_parse = "unescape_value()?.to_string().into()",
+        fun_override = "source"
+    )]
+    source: PathBuf,
+    #[XmlAttr(
+        qname = "channelflags",
+        pre_parse = "unescape_value()?.into()",
+        fun_override = "channel_flags"
+    )]
+    channel_flags: String,
+}
+
+//TODO: mention that it is called adjustment layer somewhere
+#[derive(Debug, Getters, ParseTag)]
+#[getset(get = "pub", get_copy = "pub")]
+pub struct FilterLayerProps {
+    #[XmlAttr(
+        qname = "filtername",
+        pre_parse = "unescape_value()?",
+        fun_override = "filter_name.to_string()"
+    )]
+    filter_name: String,
+    #[XmlAttr(qname = "filterversion", fun_override = "parse_attr(filter_version)?")]
+    filter_version: u32,
+    #[XmlAttr(
+        qname = "channelflags",
+        pre_parse = "unescape_value()?.into()",
+        fun_override = "channel_flags"
+    )]
+    channel_flags: String,
+    #[XmlAttr(fun_override = "parse_bool(collapsed)?")]
+    collapsed: bool,
+    #[XmlAttr(qname = "compositeop", fun_override = "parse_attr(composite_op)?")]
+    composite_op: CompositeOp,
+    #[XmlAttr(fun_override = "parse_attr(opacity)?")]
+    opacity: u8,
+}
+
+//TODO: mention somewhere that it is called generatorlayer
+#[derive(Debug, Getters, ParseTag)]
+#[getset(get = "pub", get_copy = "pub")]
+pub struct FillLayerProps {
+    #[XmlAttr(fun_override = "parse_attr(opacity)?")]
+    opacity: u8,
+    #[XmlAttr(qname = "compositeop", fun_override = "parse_attr(composite_op)?")]
+    composite_op: CompositeOp,
+    //TODO: enum?
+    #[XmlAttr(
+        qname = "generatorname",
+        pre_parse = "unescape_value()?.into()",
+        fun_override = "generator_name"
+    )]
+    generator_name: String,
+    #[XmlAttr(
+        qname = "generatorversion",
+        fun_override = "parse_attr(generator_version)?"
+    )]
+    generator_version: u32,
+    #[XmlAttr(
+        qname = "channelflags",
+        pre_parse = "unescape_value()?.into()",
+        fun_override = "channel_flags"
+    )]
+    channel_flags: String,
+    #[XmlAttr(fun_override = "parse_bool(collapsed)?")]
+    collapsed: bool,
+}
+
+#[derive(Debug, Getters, ParseTag)]
+#[getset(get = "pub", get_copy = "pub")]
+pub struct CloneLayerProps {
+    //TODO: figure out proper type
+    #[XmlAttr(qname = "clonetype", fun_override = "parse_attr(clone_type)?")]
+    clone_type: u32,
+    #[XmlAttr(
+        qname = "clonefrom",
+        pre_parse = "unescape_value()?.into()",
+        fun_override = "clone_from"
+    )]
+    clone_from: String,
+    #[XmlAttr(qname = "compositeop", fun_override = "parse_attr(composite_op)?")]
+    composite_op: CompositeOp,
+    #[XmlAttr(fun_override = "parse_attr(opacity)?")]
+    opacity: u8,
+    #[XmlAttr(
+        qname = "clonefromuuid",
+        pre_parse = "unescape_value()?",
+        fun_override = "Uuid::from_str(clone_from_uuid.as_ref())?"
+    )]
+    clone_from_uuid: Uuid,
+    #[XmlAttr(
+        qname = "channelflags",
+        pre_parse = "unescape_value()?.into()",
+        fun_override = "channel_flags"
+    )]
+    channel_flags: String,
+    #[XmlAttr(fun_override = "parse_bool(collapsed)?")]
+    collapsed: bool,
+}
+
+// No props beyond common ones
+#[derive(Debug)]
+pub struct TransparencyMaskProps();
+
+impl TransparencyMaskProps {
+    pub(crate) fn new() -> TransparencyMaskProps {
+        TransparencyMaskProps()
+    }
+}
+// Same here
+#[derive(Debug)]
+pub struct TransformMaskProps();
+
+impl TransformMaskProps {
+    pub(crate) fn new() -> TransformMaskProps {
+        TransformMaskProps()
+    }
+}
+
+#[derive(Debug, Getters, ParseTag)]
+#[getset(get = "pub", get_copy = "pub")]
+pub struct ColorizeMaskProps {
+    #[XmlAttr(
+        qname = "limit-to-device",
+        fun_override = "parse_bool(limit_to_device)?"
+    )]
+    limit_to_device: bool,
+    #[XmlAttr(qname = "show-coloring", fun_override = "parse_bool(show_coloring)?")]
+    show_coloring: bool,
+    //TODO: is it a proper type?
+    #[XmlAttr(fun_override = "parse_attr(cleanup)?")]
+    cleanup: u8,
+    #[XmlAttr(
+        qname = "use-edge-detection",
+        fun_override = "parse_bool(use_edge_detection)?"
+    )]
+    use_edge_detection: bool,
+    #[XmlAttr(
+        qname = "edge-detection-size",
+        fun_override = "parse_attr(edge_detection_size)?"
+    )]
+    edge_detection_size: u32,
+    #[XmlAttr(qname = "fuzzy-radius", fun_override = "parse_attr(fuzzy_radius)?")]
+    fuzzy_radius: u32,
+    #[XmlAttr(
+        qname = "edit-keystrokes",
+        fun_override = "parse_bool(edit_keystrokes)?"
+    )]
+    edit_keystrokes: bool,
+    #[XmlAttr(qname = "compositeop", fun_override = "parse_attr(composite_op)?")]
+    composite_op: CompositeOp,
+    #[XmlAttr(
+        qname = "colorspacename",
+        pre_parse = "unescape_value()?",
+        fun_override = "Colorspace::try_from(colorspace.as_ref())?"
+    )]
+    colorspace: Colorspace,
+}
+
+// TODO: called shapelayer, mention somewhere
+#[derive(Debug, Getters, ParseTag)]
+#[getset(get = "pub", get_copy = "pub")]
+pub struct VectorLayerProps {
+    #[XmlAttr(qname = "compositeop", fun_override = "parse_attr(composite_op)?")]
+    composite_op: CompositeOp,
+    #[XmlAttr(fun_override = "parse_attr(opacity)?")]
+    opacity: u8,
+    #[XmlAttr(
+        qname = "channelflags",
+        pre_parse = "unescape_value()?.into()",
+        fun_override = "channel_flags"
+    )]
+    channel_flags: String,
+    #[XmlAttr(fun_override = "parse_bool(collapsed)?")]
+    collapsed: bool,
 }

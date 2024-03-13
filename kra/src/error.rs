@@ -21,6 +21,10 @@ pub struct UnknownCompositeOp(pub(crate) String);
 #[error("unknown layer type: {0}")]
 pub struct UnknownLayerType(pub(crate) String);
 
+#[derive(Error, Debug, PartialEq, Eq, Clone, Hash)]
+#[error("expected a mask, got: {0}")]
+pub struct MaskExpected(pub(crate) String);
+
 #[derive(Debug, Clone, Error)]
 pub enum XmlError {
     // Error used when we check some property
@@ -54,6 +58,9 @@ pub enum MetadataErrorReason {
 
     #[error(transparent)]
     UnknownLayerType(#[from] UnknownLayerType),
+
+    #[error(transparent)]
+    MaskExpected(#[from] MaskExpected),
 
     #[error(transparent)]
     ParseUuidError(#[from] ParseUuidError),

@@ -9,15 +9,14 @@ This is a library for reading =.kra= files.
     2. GroupLayer
     3. FilterMask
     4. SelectionMask
-  - [ ] Does not support these layer types yet
-    1. FileLayer
-    2. FilterLayer
-    3. FillLayer
-    4. CloneLayer
-    5. VectorLayer
-    6. TransparencyMask
-    7. TransformMask
-    8. ColorizeMask
+    5. FileLayer
+    6. FilterLayer
+    7. FillLayer
+    8. CloneLayer
+    9. VectorLayer
+    10. TransparencyMask
+    11. TransformMask
+    12. ColorizeMask
   - [ ] It does not register what layer was selected at the moment of saving (attribute ~selected="true"~).
 + [ ] Extracting images
 *** Writing

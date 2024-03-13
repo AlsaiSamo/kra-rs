@@ -27,7 +27,9 @@ use std::{
 };
 
 use data::NodeData;
-use error::{MetadataErrorReason, ReadKraError, UnknownColorspace, UnknownLayerType, XmlError};
+use error::{
+    MaskExpected, MetadataErrorReason, ReadKraError, UnknownColorspace, UnknownLayerType, XmlError,
+};
 use getset::Getters;
 use helper::{
     event_get_attr, event_to_string, event_unwrap_as_end, event_unwrap_as_start, next_xml_event,
@@ -168,10 +170,17 @@ fn parse_layer(reader: &mut XmlReader<&[u8]>) -> Result<Node, MetadataErrorReaso
 
     let node_type = event_get_attr(&tag, "nodetype")?.unescape_value()?;
     let node_type = match node_type.as_ref() {
-        //TODO: other node types
         "grouplayer" => NodeType::GroupLayer(GroupLayerProps::parse_tag(&tag, reader)?),
         "paintlayer" => NodeType::PaintLayer(PaintLayerProps::parse_tag(&tag)?),
         "filtermask" => NodeType::FilterMask(FilterMaskProps::parse_tag(&tag)?),
+        "filelayer" => NodeType::FileLayer(FileLayerProps::parse_tag(&tag)?),
+        "adjustmentlayer" => NodeType::FilterLayer(FilterLayerProps::parse_tag(&tag)?),
+        "generatorlayer" => NodeType::FillLayer(FillLayerProps::parse_tag(&tag)?),
+        "clonelayer" => NodeType::CloneLayer(CloneLayerProps::parse_tag(&tag)?),
+        "transparencymask" => NodeType::TransparencyMask(TransparencyMaskProps::new()),
+        "transformmask" => NodeType::TransformMask(TransformMaskProps::new()),
+        "colorizemask" => NodeType::ColorizeMask(ColorizeMaskProps::parse_tag(&tag)?),
+        "shapelayer" => NodeType::VectorLayer(VectorLayerProps::parse_tag(&tag)?),
         "selectionmask" => NodeType::SelectionMask(SelectionMaskProps::parse_tag(&tag)?),
         _ => {
             return Err(MetadataErrorReason::UnknownLayerType(UnknownLayerType(
@@ -244,17 +253,18 @@ fn parse_mask(reader: &mut XmlReader<&[u8]>) -> Result<Vec<Node>, MetadataErrorR
                 let node_type = event_get_attr(&tag, "nodetype")?.unescape_value()?;
                 let node_type = match node_type.as_ref() {
                     "filtermask" => NodeType::FilterMask(FilterMaskProps::parse_tag(&tag)?),
+                    "transparencymask" => NodeType::TransparencyMask(TransparencyMaskProps::new()),
+                    "transformmask" => NodeType::TransformMask(TransformMaskProps::new()),
+                    "colorizemask" => NodeType::ColorizeMask(ColorizeMaskProps::parse_tag(&tag)?),
                     "selectionmask" => {
                         NodeType::SelectionMask(SelectionMaskProps::parse_tag(&tag)?)
                     }
-
                     _ => {
-                        return Err(MetadataErrorReason::UnknownLayerType(UnknownLayerType(
+                        return Err(MetadataErrorReason::MaskExpected(MaskExpected(
                             node_type.into_owned(),
                         )));
                     }
                 };
-
                 masks.push(Node::new(common, None, node_type))
             }
             other => {
