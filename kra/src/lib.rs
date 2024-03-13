@@ -236,6 +236,15 @@ where
     Ok(parse_attr::<T>(attr)?)
 }
 
+//same but for bool
+#[inline]
+pub(crate) fn push_and_parse_bool(reader: &mut XmlReader<&[u8]>) -> Result<bool, XmlError> {
+    let event = next_xml_event(reader)?;
+    let tag = event_unwrap_as_empty(event)?;
+    let attr = event_get_attr(&tag, "value")?;
+    Ok(parse_bool(attr)?)
+}
+
 //Starts immed. before the start tag
 pub(crate) fn get_text_between_tags<'a>(
     reader: &mut XmlReader<&'a [u8]>,

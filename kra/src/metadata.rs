@@ -8,7 +8,7 @@ use crate::{
     error::{MetadataErrorReason, XmlError},
     event_get_attr, event_to_string, event_unwrap_as_doctype, event_unwrap_as_empty,
     event_unwrap_as_end, event_unwrap_as_start, get_text_between_tags, next_xml_event, parse_attr,
-    push_and_parse_value, Colorspace,
+    push_and_parse_bool, push_and_parse_value, Colorspace,
 };
 
 const MAINDOC_DOCTYPE: &str =
@@ -132,11 +132,11 @@ impl ImageMetadata {
     }
 }
 
-// contains data from the end of maindoc.xml
-// TODO: add proper types
+// Data from the end of maindoc.xml
 /// Data at the end of `maindoc.xml`
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
 pub(crate) struct ImageMetadataEnd {
+    //TODO: proper types for colors
     /// Projection background color.
     pub(crate) projection_background_color: String,
     /// Global assistants color.
@@ -167,12 +167,13 @@ impl ImageMetadataEnd {
 //TODO: check types
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
 pub(crate) struct MirrorAxis {
-    pub(crate) mirror_horizontal: u32,
-    pub(crate) mirror_vertical: u32,
-    pub(crate) lock_horizontal: u32,
-    pub(crate) lock_vertical: u32,
-    pub(crate) hide_horizontal_decoration: u32,
-    pub(crate) hide_vertical_decoration: u32,
+    pub(crate) mirror_horizontal: bool,
+    pub(crate) mirror_vertical: bool,
+    pub(crate) lock_horizontal: bool,
+    pub(crate) lock_vertical: bool,
+    pub(crate) hide_horizontal_decoration: bool,
+    pub(crate) hide_vertical_decoration: bool,
+    //TODO: these four ones are floats
     pub(crate) handle_size: u32,
     pub(crate) horizontal_handle_position: u32,
     pub(crate) vertical_handle_position: u32,
@@ -184,12 +185,13 @@ impl MirrorAxis {
         // <MirrorAxis>
         next_xml_event(reader)?;
 
-        let mirror_horizontal = push_and_parse_value(reader)?;
-        let mirror_vertical = push_and_parse_value(reader)?;
-        let lock_horizontal = push_and_parse_value(reader)?;
-        let lock_vertical = push_and_parse_value(reader)?;
-        let hide_horizontal_decoration = push_and_parse_value(reader)?;
-        let hide_vertical_decoration = push_and_parse_value(reader)?;
+        let mirror_horizontal = push_and_parse_bool(reader)?;
+        let mirror_vertical = push_and_parse_bool(reader)?;
+        let lock_horizontal = push_and_parse_bool(reader)?;
+        let lock_vertical = push_and_parse_bool(reader)?;
+        let hide_horizontal_decoration = push_and_parse_bool(reader)?;
+        let hide_vertical_decoration = push_and_parse_bool(reader)?;
+
         let handle_size = push_and_parse_value(reader)?;
         let horizontal_handle_position = push_and_parse_value(reader)?;
         let vertical_handle_position = push_and_parse_value(reader)?;
