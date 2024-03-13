@@ -10,10 +10,13 @@ use kra_macro::ParseTag;
 use quick_xml::events::BytesStart;
 use uuid::Uuid;
 
+use crate::helper::{
+    event_get_attr, event_unwrap_as_end, event_unwrap_as_start, next_xml_event, parse_attr,
+    parse_bool,
+};
 use crate::{
     error::{MetadataErrorReason, UnknownCompositeOp, XmlError},
-    event_get_attr, event_unwrap_as_end, event_unwrap_as_start, next_xml_event, parse_attr,
-    parse_bool, parse_layer, Colorspace,
+    parse_layer, Colorspace,
 };
 
 /// Composition operator.
