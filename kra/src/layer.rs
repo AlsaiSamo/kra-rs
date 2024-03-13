@@ -12,7 +12,8 @@ use uuid::Uuid;
 
 use crate::{
     error::{MetadataErrorReason, UnknownCompositeOp, XmlError},
-    event_get_attr, parse_attr, parse_bool, Colorspace,
+    event_get_attr, event_unwrap_as_end, event_unwrap_as_start, next_xml_event, parse_attr,
+    parse_bool, parse_layer, Colorspace,
 };
 
 /// Composition operator.
