@@ -17,13 +17,11 @@ pub mod layer;
 pub mod metadata;
 
 use std::{
-    borrow::Cow,
     collections::HashMap,
     fmt::{self, Display},
     fs::File,
     io::Read,
     path::Path,
-    str::FromStr,
 };
 
 use data::NodeData;
@@ -35,21 +33,19 @@ use helper::{
     event_get_attr, event_to_string, event_unwrap_as_end, event_unwrap_as_start, next_xml_event,
 };
 use layer::{
-    CommonNodeProps, FilterMaskProps, GroupLayerProps, Node, NodeType, PaintLayerProps,
-    SelectionMaskProps,
+    CloneLayerProps, ColorizeMaskProps, CommonNodeProps, FileLayerProps, FillLayerProps,
+    FilterLayerProps, FilterMaskProps, GroupLayerProps, Node, NodeType, PaintLayerProps,
+    SelectionMaskProps, TransformMaskProps, TransparencyMaskProps, VectorLayerProps,
 };
 use metadata::{ImageMetadata, ImageMetadataEnd};
 use uuid::Uuid;
 use zip::ZipArchive;
 
-use quick_xml::{
-    events::{attributes::Attribute, BytesEnd, BytesStart, BytesText, Event},
-    reader::Reader as XmlReader,
-};
+use quick_xml::events::{BytesStart, Event};
+use quick_xml::Reader as XmlReader;
 
 use crate::metadata::DocumentInfo;
 
-//TODO: move out?
 /// Colorspace identifier.
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 #[non_exhaustive]
@@ -219,9 +215,6 @@ fn get_layers(reader: &mut XmlReader<&[u8]>) -> Result<Vec<Node>, MetadataErrorR
             }
         }
     }
-
-    //</layers> is already handled in the loop
-
     Ok(layers)
 }
 

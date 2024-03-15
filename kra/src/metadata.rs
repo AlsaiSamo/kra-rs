@@ -5,12 +5,12 @@ use std::fmt::{self, Display};
 use quick_xml::{events::Event, reader::Reader as XmlReader};
 
 use crate::helper::{
-    event_unwrap_as_doctype, event_unwrap_as_empty, get_text_between_tags, parse_attr,
+    event_get_attr, event_to_string, event_unwrap_as_doctype, event_unwrap_as_empty,
+    event_unwrap_as_end, event_unwrap_as_start, get_text_between_tags, next_xml_event, parse_attr,
     push_and_parse_bool, push_and_parse_value,
 };
 use crate::{
     error::{MetadataErrorReason, XmlError},
-    event_get_attr, event_to_string, event_unwrap_as_end, event_unwrap_as_start, next_xml_event,
     Colorspace,
 };
 
@@ -137,13 +137,13 @@ impl ImageMetadata {
     }
 }
 
-// Data from the end of maindoc.xml
 /// Data at the end of `maindoc.xml`
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
 pub(crate) struct ImageMetadataEnd {
-    //TODO: proper types for colors
+    //TODO: four base64 encoded bytes
     /// Projection background color.
     pub(crate) projection_background_color: String,
+    //TODO: four comma delimited bytes
     /// Global assistants color.
     pub(crate) global_assistants_color: String,
     /// Mirror axis configuration.
@@ -156,6 +156,8 @@ impl ImageMetadataEnd {
         let event = next_xml_event(reader)?;
         let tag = event_unwrap_as_empty(event)?;
         let projection_background_color = parse_attr(event_get_attr(&tag, "ColorData")?)?;
+
+        //<GlobalAssistantsColor ... />
         let event = next_xml_event(reader)?;
         let tag = event_unwrap_as_empty(event)?;
         let global_assistants_color = parse_attr(event_get_attr(&tag, "SimpleColorData")?)?;
@@ -169,7 +171,6 @@ impl ImageMetadataEnd {
     }
 }
 
-//TODO: check types
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
 pub(crate) struct MirrorAxis {
     pub(crate) mirror_horizontal: bool,
@@ -178,7 +179,7 @@ pub(crate) struct MirrorAxis {
     pub(crate) lock_vertical: bool,
     pub(crate) hide_horizontal_decoration: bool,
     pub(crate) hide_vertical_decoration: bool,
-    //TODO: these four ones are floats
+
     pub(crate) handle_size: OF<f32>,
     pub(crate) horizontal_handle_position: OF<f32>,
     pub(crate) vertical_handle_position: OF<f32>,
@@ -273,8 +274,6 @@ impl DocumentInfo {
         let event = next_xml_event(reader)?;
         let doc_info = event_unwrap_as_start(event)?;
         let xmlns = event_get_attr(&doc_info, "xmlns")?.unescape_value()?;
-        //TODO: there are multiple such blocks, two in this function and two in maindoc's from_xml().
-        // Cound be abstracted away
         if xmlns != DOCUMENTINFO_XMLNS {
             return Err(MetadataErrorReason::XmlError(XmlError::AssertionFailed(
                 DOCUMENTINFO_XMLNS,
