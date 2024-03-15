@@ -14,6 +14,8 @@ use crate::{
     Colorspace,
 };
 
+use ordered_float::OrderedFloat as OF;
+
 const MAINDOC_DOCTYPE: &str =
     r"DOC PUBLIC '-//KDE//DTD krita 2.0//EN' 'http://www.calligra.org/DTD/krita-2.0.dtd'";
 const MAINDOC_XMLNS: &str = r"http://www.calligra.org/DTD/krita";
@@ -177,10 +179,10 @@ pub(crate) struct MirrorAxis {
     pub(crate) hide_horizontal_decoration: bool,
     pub(crate) hide_vertical_decoration: bool,
     //TODO: these four ones are floats
-    pub(crate) handle_size: u32,
-    pub(crate) horizontal_handle_position: u32,
-    pub(crate) vertical_handle_position: u32,
-    pub(crate) axis_position: [u32; 2],
+    pub(crate) handle_size: OF<f32>,
+    pub(crate) horizontal_handle_position: OF<f32>,
+    pub(crate) vertical_handle_position: OF<f32>,
+    pub(crate) axis_position: [OF<f32>; 2],
 }
 
 impl MirrorAxis {

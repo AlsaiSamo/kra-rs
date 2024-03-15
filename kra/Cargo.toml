@@ -12,6 +12,7 @@ getset="0.1.2"
 quick-xml = "0.31"
 uuid-simd = "0.8.0"
 uuid = "1.2.2"
+ordered-float = "4.2.0"
 
 #TODO: publish the macro crate, then rewrite here
 #TODO: build-dependencies?
