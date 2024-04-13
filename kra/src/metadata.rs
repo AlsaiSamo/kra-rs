@@ -31,7 +31,7 @@ const MIMETYPE: &str = "application/x-kra";
 
 /// Metadata of the image.
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
-pub struct ImageMetadata {
+pub struct KraMetadata {
     /// Version of Krita under which the file was saved.
     pub(crate) krita_version: String,
 
@@ -60,12 +60,12 @@ pub struct ImageMetadata {
     pub(crate) x_res: u32,
 }
 
-impl Display for ImageMetadata {
+impl Display for KraMetadata {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.name)
     }
 }
-impl ImageMetadata {
+impl KraMetadata {
     pub(crate) fn from_xml(reader: &mut XmlReader<&[u8]>) -> Result<Self, MetadataErrorReason> {
         //TODO: do we need to check this declaration properly?
         next_xml_event(reader)?;
@@ -123,7 +123,7 @@ impl ImageMetadata {
         let x_res = event_get_attr(&image_props, "x-res")?;
         let y_res = event_get_attr(&image_props, "y-res")?;
 
-        Ok(ImageMetadata {
+        Ok(KraMetadata {
             krita_version: krita_version.unescape_value()?.to_string(),
             name: name.unescape_value()?.to_string(),
             description: description.unescape_value()?.to_string(),
@@ -139,7 +139,7 @@ impl ImageMetadata {
 
 /// Data at the end of `maindoc.xml`
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
-pub(crate) struct ImageMetadataEnd {
+pub(crate) struct KraMetadataEnd {
     //TODO: four base64 encoded bytes
     /// Projection background color.
     pub(crate) projection_background_color: String,
@@ -150,7 +150,7 @@ pub(crate) struct ImageMetadataEnd {
     pub(crate) mirror_axis: MirrorAxis,
 }
 
-impl ImageMetadataEnd {
+impl KraMetadataEnd {
     pub(crate) fn from_xml(reader: &mut XmlReader<&[u8]>) -> Result<Self, MetadataErrorReason> {
         //<ProjectionBackgroundColor ... />
         let event = next_xml_event(reader)?;
@@ -163,7 +163,7 @@ impl ImageMetadataEnd {
         let global_assistants_color = parse_attr(event_get_attr(&tag, "SimpleColorData")?)?;
         let mirror_axis = MirrorAxis::from_xml(reader)?;
 
-        Ok(ImageMetadataEnd {
+        Ok(KraMetadataEnd {
             projection_background_color,
             global_assistants_color,
             mirror_axis,

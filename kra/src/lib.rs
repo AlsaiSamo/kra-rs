@@ -37,7 +37,7 @@ use layer::{
     FilterLayerProps, FilterMaskProps, GroupLayerProps, Node, NodeType, PaintLayerProps,
     SelectionMaskProps, TransformMaskProps, TransparencyMaskProps, VectorLayerProps,
 };
-use metadata::{ImageMetadata, ImageMetadataEnd};
+use metadata::{KraMetadata, KraMetadataEnd};
 use uuid::Uuid;
 use zip::ZipArchive;
 
@@ -80,8 +80,8 @@ impl Display for Colorspace {
 #[getset(get = "pub")]
 pub struct KraFile {
     pub(crate) file: Option<ZipArchive<File>>,
-    pub(crate) meta: ImageMetadata,
-    pub(crate) meta_end: ImageMetadataEnd,
+    pub(crate) meta: KraMetadata,
+    pub(crate) meta_end: KraMetadataEnd,
     pub(crate) doc_info: DocumentInfo,
     pub(crate) layers: Vec<Node>,
     pub(crate) files: HashMap<Uuid, NodeData>,
@@ -122,13 +122,13 @@ impl KraFile {
         let mut maindoc = XmlReader::from_str(maindoc.as_str());
 
         maindoc.trim_text(true);
-        let meta = ImageMetadata::from_xml(&mut maindoc)
+        let meta = KraMetadata::from_xml(&mut maindoc)
             .map_err(|err| err.to_metadata_error("maindoc.xml".into(), &maindoc))?;
 
         let layers = get_layers(&mut maindoc)
             .map_err(|err| err.to_metadata_error("maindoc".into(), &maindoc))?;
 
-        let meta_end = ImageMetadataEnd::from_xml(&mut maindoc)
+        let meta_end = KraMetadataEnd::from_xml(&mut maindoc)
             .map_err(|err| err.to_metadata_error("maindoc.xml".into(), &maindoc))?;
 
         Ok(KraFile {
