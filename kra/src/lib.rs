@@ -24,7 +24,7 @@ use std::{
     path::Path,
 };
 
-use data::NodeData;
+use data::{NodeData, Unloaded};
 use error::{
     MaskExpected, MetadataErrorReason, ReadKraError, UnknownColorspace, UnknownLayerType, XmlError,
 };
@@ -124,7 +124,9 @@ impl KraFile {
         let meta_start = KraMetadataStart::from_xml(&mut maindoc)
             .map_err(|err| err.to_metadata_error("maindoc.xml".into(), &maindoc))?;
 
-        let layers = get_layers(&mut maindoc)
+        let mut files = HashMap::new();
+
+        let layers = get_layers(&mut maindoc, &mut files)
             .map_err(|err| err.to_metadata_error("maindoc".into(), &maindoc))?;
 
         let meta_end = KraMetadataEnd::from_xml(&mut maindoc)
@@ -137,14 +139,16 @@ impl KraFile {
             meta,
             doc_info,
             layers,
-            //TODO: fill out
-            files: HashMap::new(),
+            files,
         })
     }
 }
 
 //Starts immed. before the required <layer> | <layer/> | <mask> | <mask/>
-fn parse_layer(reader: &mut XmlReader<&[u8]>) -> Result<Node, MetadataErrorReason> {
+fn parse_layer(
+    reader: &mut XmlReader<&[u8]>,
+    files: &mut HashMap<Uuid, NodeData>,
+) -> Result<Node, MetadataErrorReason> {
     let event = next_xml_event(reader)?;
 
     // If the event is not empty, and it is not a group layer, it contains masks
@@ -166,18 +170,82 @@ fn parse_layer(reader: &mut XmlReader<&[u8]>) -> Result<Node, MetadataErrorReaso
 
     let node_type = event_get_attr(&tag, "nodetype")?.unescape_value()?;
     let node_type = match node_type.as_ref() {
-        "grouplayer" => NodeType::GroupLayer(GroupLayerProps::parse_tag(&tag, reader)?),
-        "paintlayer" => NodeType::PaintLayer(PaintLayerProps::parse_tag(&tag)?),
-        "filtermask" => NodeType::FilterMask(FilterMaskProps::parse_tag(&tag)?),
-        "filelayer" => NodeType::FileLayer(FileLayerProps::parse_tag(&tag)?),
-        "adjustmentlayer" => NodeType::FilterLayer(FilterLayerProps::parse_tag(&tag)?),
-        "generatorlayer" => NodeType::FillLayer(FillLayerProps::parse_tag(&tag)?),
-        "clonelayer" => NodeType::CloneLayer(CloneLayerProps::parse_tag(&tag)?),
-        "transparencymask" => NodeType::TransparencyMask(TransparencyMaskProps::new()),
-        "transformmask" => NodeType::TransformMask(TransformMaskProps::new()),
-        "colorizemask" => NodeType::ColorizeMask(ColorizeMaskProps::parse_tag(&tag)?),
-        "shapelayer" => NodeType::VectorLayer(VectorLayerProps::parse_tag(&tag)?),
-        "selectionmask" => NodeType::SelectionMask(SelectionMaskProps::parse_tag(&tag)?),
+        //TODO: finish (Selection mask) and verify
+        "grouplayer" => {
+            files.insert(common.uuid().to_owned(), NodeData::DoesNotExist);
+            NodeType::GroupLayer(GroupLayerProps::parse_tag(&tag, reader, files)?)
+        }
+        "paintlayer" => {
+            files.insert(
+                common.uuid().to_owned(),
+                NodeData::Unloaded(Unloaded::Image),
+            );
+            NodeType::PaintLayer(PaintLayerProps::parse_tag(&tag)?)
+        }
+        "filtermask" => {
+            files.insert(
+                common.uuid().to_owned(),
+                NodeData::Unloaded(Unloaded::Filter),
+            );
+            NodeType::FilterMask(FilterMaskProps::parse_tag(&tag)?)
+        }
+        "filelayer" => {
+            files.insert(common.uuid().to_owned(), NodeData::DoesNotExist);
+            NodeType::FileLayer(FileLayerProps::parse_tag(&tag)?)
+        }
+        "adjustmentlayer" => {
+            files.insert(
+                common.uuid().to_owned(),
+                NodeData::Unloaded(Unloaded::Filter),
+            );
+            NodeType::FilterLayer(FilterLayerProps::parse_tag(&tag)?)
+        }
+        "generatorlayer" => {
+            files.insert(
+                common.uuid().to_owned(),
+                NodeData::Unloaded(Unloaded::Filter),
+            );
+            NodeType::FillLayer(FillLayerProps::parse_tag(&tag)?)
+        }
+        "clonelayer" => {
+            files.insert(common.uuid().to_owned(), NodeData::DoesNotExist);
+            NodeType::CloneLayer(CloneLayerProps::parse_tag(&tag)?)
+        }
+        "transparencymask" => {
+            files.insert(
+                common.uuid().to_owned(),
+                NodeData::Unloaded(Unloaded::TransparencyMask),
+            );
+            NodeType::TransparencyMask(TransparencyMaskProps::new())
+        }
+        "transformmask" => {
+            files.insert(
+                common.uuid().to_owned(),
+                NodeData::Unloaded(Unloaded::TransformMask),
+            );
+            NodeType::TransformMask(TransformMaskProps::new())
+        }
+        "colorizemask" => {
+            files.insert(
+                common.uuid().to_owned(),
+                NodeData::Unloaded(Unloaded::ColorizeMask),
+            );
+            NodeType::ColorizeMask(ColorizeMaskProps::parse_tag(&tag)?)
+        }
+        "shapelayer" => {
+            files.insert(
+                common.uuid().to_owned(),
+                NodeData::Unloaded(Unloaded::Vector),
+            );
+            NodeType::VectorLayer(VectorLayerProps::parse_tag(&tag)?)
+        }
+        "selectionmask" => {
+            files.insert(
+                common.uuid().to_owned(),
+                NodeData::Unloaded(Unloaded::SelectionMask),
+            );
+            NodeType::SelectionMask(SelectionMaskProps::parse_tag(&tag)?)
+        }
         _ => {
             return Err(MetadataErrorReason::UnknownLayerType(UnknownLayerType(
                 node_type.into_owned(),
@@ -188,20 +256,23 @@ fn parse_layer(reader: &mut XmlReader<&[u8]>) -> Result<Node, MetadataErrorReaso
     let masks = match (could_contain_masks, &node_type) {
         (_, NodeType::GroupLayer(_)) => None,
         (false, _) => None,
-        (true, _) => Some(parse_mask(reader)?),
+        (true, _) => Some(parse_mask(reader, files)?),
     };
 
     Ok(Node::new(common, masks, node_type))
 }
 
-fn get_layers(reader: &mut XmlReader<&[u8]>) -> Result<Vec<Node>, MetadataErrorReason> {
+fn get_layers(
+    reader: &mut XmlReader<&[u8]>,
+    files: &mut HashMap<Uuid, NodeData>,
+) -> Result<Vec<Node>, MetadataErrorReason> {
     let mut layers: Vec<Node> = Vec::new();
     //<layers>
     let event = next_xml_event(reader)?;
     event_unwrap_as_start(event)?;
 
     loop {
-        match parse_layer(reader) {
+        match parse_layer(reader, files) {
             Ok(layer) => layers.push(layer),
             Err(MetadataErrorReason::XmlError(XmlError::EventError(a, ref b)))
                 //</layers>
@@ -220,7 +291,10 @@ fn get_layers(reader: &mut XmlReader<&[u8]>) -> Result<Vec<Node>, MetadataErrorR
 
 //TODO: this and parse_layer() share similarities that I would like to control
 // together (like matching the layer type, or getting layers, which may be similar with grouplayer's).
-fn parse_mask(reader: &mut XmlReader<&[u8]>) -> Result<Vec<Node>, MetadataErrorReason> {
+fn parse_mask(
+    reader: &mut XmlReader<&[u8]>,
+    files: &mut HashMap<Uuid, NodeData>,
+) -> Result<Vec<Node>, MetadataErrorReason> {
     //<masks>
     let event = next_xml_event(reader)?;
     event_unwrap_as_start(event)?;
@@ -245,11 +319,39 @@ fn parse_mask(reader: &mut XmlReader<&[u8]>) -> Result<Vec<Node>, MetadataErrorR
                 let common = CommonNodeProps::parse_tag(&tag)?;
                 let node_type = event_get_attr(&tag, "nodetype")?.unescape_value()?;
                 let node_type = match node_type.as_ref() {
-                    "filtermask" => NodeType::FilterMask(FilterMaskProps::parse_tag(&tag)?),
-                    "transparencymask" => NodeType::TransparencyMask(TransparencyMaskProps::new()),
-                    "transformmask" => NodeType::TransformMask(TransformMaskProps::new()),
-                    "colorizemask" => NodeType::ColorizeMask(ColorizeMaskProps::parse_tag(&tag)?),
+                    "filtermask" => {
+                        files.insert(
+                            common.uuid().to_owned(),
+                            NodeData::Unloaded(Unloaded::Filter),
+                        );
+                        NodeType::FilterMask(FilterMaskProps::parse_tag(&tag)?)
+                    }
+                    "transparencymask" => {
+                        files.insert(
+                            common.uuid().to_owned(),
+                            NodeData::Unloaded(Unloaded::TransparencyMask),
+                        );
+                        NodeType::TransparencyMask(TransparencyMaskProps::new())
+                    }
+                    "transformmask" => {
+                        files.insert(
+                            common.uuid().to_owned(),
+                            NodeData::Unloaded(Unloaded::TransformMask),
+                        );
+                        NodeType::TransformMask(TransformMaskProps::new())
+                    }
+                    "colorizemask" => {
+                        files.insert(
+                            common.uuid().to_owned(),
+                            NodeData::Unloaded(Unloaded::ColorizeMask),
+                        );
+                        NodeType::ColorizeMask(ColorizeMaskProps::parse_tag(&tag)?)
+                    }
                     "selectionmask" => {
+                        files.insert(
+                            common.uuid().to_owned(),
+                            NodeData::Unloaded(Unloaded::SelectionMask),
+                        );
                         NodeType::SelectionMask(SelectionMaskProps::parse_tag(&tag)?)
                     }
                     _ => {

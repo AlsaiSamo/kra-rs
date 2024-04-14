@@ -1,6 +1,7 @@
 //! Nodes - layers and masks, and supporting structs.
 
 use std::{
+    collections::HashMap,
     fmt::{self, Display},
     path::PathBuf,
     str::FromStr,
@@ -11,9 +12,12 @@ use kra_macro::ParseTag;
 use quick_xml::events::BytesStart;
 use uuid::Uuid;
 
-use crate::helper::{
-    event_get_attr, event_unwrap_as_end, event_unwrap_as_start, next_xml_event, parse_attr,
-    parse_bool,
+use crate::{
+    data::NodeData,
+    helper::{
+        event_get_attr, event_unwrap_as_end, event_unwrap_as_start, next_xml_event, parse_attr,
+        parse_bool,
+    },
 };
 use crate::{
     error::{MetadataErrorReason, UnknownCompositeOp, XmlError},
@@ -480,7 +484,9 @@ pub struct PaintLayerProps {
 /// Properties specific to group layer.
 #[derive(Debug, Getters, ParseTag)]
 #[getset(get = "pub", get_copy = "pub")]
-#[ExtraArgs(extra_args = "reader: &mut quick_xml::Reader<&[u8]>")]
+#[ExtraArgs(
+    extra_args = "reader: &mut quick_xml::Reader<&[u8]>, files: &mut HashMap<Uuid, NodeData>"
+)]
 pub struct GroupLayerProps {
     #[XmlAttr(qname = "compositeop", fun_override = "parse_attr(composite_op)?")]
     pub(crate) composite_op: CompositeOp,
@@ -490,13 +496,17 @@ pub struct GroupLayerProps {
     pub(crate) passthrough: bool,
     #[XmlAttr(fun_override = "parse_attr(opacity)?")]
     pub(crate) opacity: u8,
-    #[XmlAttr(extract_data = false, fun_override = "group_get_layers(reader)?")]
+    #[XmlAttr(
+        extract_data = false,
+        fun_override = "group_get_layers(reader, files)?"
+    )]
     pub(crate) layers: Vec<Node>,
 }
 
 // Go over layers in the group, stopping at </layer>
 fn group_get_layers(
     reader: &mut quick_xml::Reader<&[u8]>,
+    files: &mut HashMap<Uuid, NodeData>,
 ) -> Result<Vec<Node>, MetadataErrorReason> {
     let mut layers: Vec<Node> = Vec::new();
     //<layers>
@@ -504,7 +514,7 @@ fn group_get_layers(
     event_unwrap_as_start(event)?;
 
     loop {
-        match parse_layer(reader) {
+        match parse_layer(reader, files) {
             Ok(layer) => layers.push(layer),
             Err(MetadataErrorReason::XmlError(XmlError::EventError(a, ref b)))
             // This assumes that we have hit </layers>
