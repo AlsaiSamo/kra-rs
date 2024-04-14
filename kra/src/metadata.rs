@@ -2,6 +2,7 @@
 
 use std::fmt::{self, Display};
 
+use getset::Getters;
 use quick_xml::{events::Event, reader::Reader as XmlReader};
 
 use crate::helper::{
@@ -24,14 +25,66 @@ const DOCUMENTINFO_XMLNS: &str = r"http://www.calligra.org/DTD/document-info";
 const SYNTAX_VERSION: &str = "2.0";
 const MIMETYPE: &str = "application/x-kra";
 
-//TODO: since image metadata is split into two parts,
-// create ImageMetadataEnd with all required functions,
-// then rename ImageMetadata into ImageMetadataStart,
-// then add ImageMetadata that combines the two.
-
 /// Metadata of the image.
-#[derive(Debug, PartialEq, Eq, Clone, Hash)]
+#[derive(Debug, PartialEq, Eq, Clone, Hash, Getters)]
+#[getset(get = "pub", get_copy = "pub")]
 pub struct KraMetadata {
+    /// Version of Krita under which the file was saved.
+    krita_version: String,
+    /// Name of the image.
+    name: String,
+    /// Description of the image.
+    description: String,
+    /// Colorspace of the image.
+    colorspace: Colorspace,
+    /// Color profile of the image.
+    profile: String,
+    /// Height, in pixels.
+    height: u32,
+    /// Width, in pixels.
+    width: u32,
+    /// Dots per inch vertically.
+    y_res: u32,
+    /// Dots per inch horisontally.
+    x_res: u32,
+
+    //TODO: look into KraMetadataEnd for these two fields
+    /// Projection background color.
+    projection_background_color: String,
+    /// Global assistants color.
+    global_assistants_color: String,
+    /// Mirror axis configuration.
+    mirror_axis: MirrorAxis,
+}
+
+impl Display for KraMetadata {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.name)
+    }
+}
+
+impl KraMetadata {
+    pub(crate) fn new(start: KraMetadataStart, end: KraMetadataEnd) -> KraMetadata {
+        KraMetadata {
+            krita_version: start.krita_version,
+            name: start.name,
+            description: start.description,
+            colorspace: start.colorspace,
+            profile: start.profile,
+            height: start.height,
+            width: start.width,
+            y_res: start.y_res,
+            x_res: start.x_res,
+            projection_background_color: end.projection_background_color,
+            global_assistants_color: end.global_assistants_color,
+            mirror_axis: end.mirror_axis,
+        }
+    }
+}
+
+/// Starting portion of metadata.
+#[derive(Debug, PartialEq, Eq, Clone, Hash)]
+pub(crate) struct KraMetadataStart {
     /// Version of Krita under which the file was saved.
     krita_version: String,
     /// Name of the image.
@@ -52,12 +105,7 @@ pub struct KraMetadata {
     x_res: u32,
 }
 
-impl Display for KraMetadata {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.name)
-    }
-}
-impl KraMetadata {
+impl KraMetadataStart {
     pub(crate) fn from_xml(reader: &mut XmlReader<&[u8]>) -> Result<Self, MetadataErrorReason> {
         //TODO: do we need to check this declaration properly?
         next_xml_event(reader)?;
@@ -115,7 +163,7 @@ impl KraMetadata {
         let x_res = event_get_attr(&image_props, "x-res")?;
         let y_res = event_get_attr(&image_props, "y-res")?;
 
-        Ok(KraMetadata {
+        Ok(KraMetadataStart {
             krita_version: krita_version.unescape_value()?.to_string(),
             name: name.unescape_value()?.to_string(),
             description: description.unescape_value()?.to_string(),
