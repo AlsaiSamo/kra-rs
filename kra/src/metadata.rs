@@ -212,7 +212,7 @@ impl KraMetadataEnd {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
-pub(crate) struct MirrorAxis {
+pub struct MirrorAxis {
     mirror_horizontal: bool,
     mirror_vertical: bool,
     lock_horizontal: bool,
