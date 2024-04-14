@@ -79,13 +79,13 @@ impl Display for Colorspace {
 #[derive(Debug, Getters)]
 #[getset(get = "pub")]
 pub struct KraFile {
-    pub(crate) file: Option<ZipArchive<File>>,
-    pub(crate) meta: KraMetadata,
-    pub(crate) meta_end: KraMetadataEnd,
-    pub(crate) doc_info: DocumentInfo,
-    pub(crate) layers: Vec<Node>,
-    pub(crate) files: HashMap<Uuid, NodeData>,
-    //TODO: mergedimage and preview
+    file: Option<ZipArchive<File>>,
+    meta: KraMetadata,
+    meta_end: KraMetadataEnd,
+    doc_info: DocumentInfo,
+    layers: Vec<Node>,
+    files: HashMap<Uuid, NodeData>,
+    //TODO: use `png` crate
 }
 
 impl KraFile {

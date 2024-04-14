@@ -52,7 +52,7 @@ pub enum XmlError {
 
 // Whatever error was thrown while parsing metadata
 #[derive(Error, Debug)]
-pub enum MetadataErrorReason {
+pub(crate) enum MetadataErrorReason {
     #[error(transparent)]
     UnknownColorspace(#[from] UnknownColorspace),
 

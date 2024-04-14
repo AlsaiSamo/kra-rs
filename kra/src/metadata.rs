@@ -33,31 +33,23 @@ const MIMETYPE: &str = "application/x-kra";
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
 pub struct KraMetadata {
     /// Version of Krita under which the file was saved.
-    pub(crate) krita_version: String,
-
+    krita_version: String,
     /// Name of the image.
-    pub(crate) name: String,
-
+    name: String,
     /// Description of the image.
-    pub(crate) description: String,
-
+    description: String,
     /// Colorspace of the image.
-    pub(crate) colorspace: Colorspace,
-
+    colorspace: Colorspace,
     /// Color profile of the image.
-    pub(crate) profile: String,
-
+    profile: String,
     /// Height, in pixels.
-    pub(crate) height: u32,
-
+    height: u32,
     /// Width, in pixels.
-    pub(crate) width: u32,
-
+    width: u32,
     /// Dots per inch vertically.
-    pub(crate) y_res: u32,
-
+    y_res: u32,
     /// Dots per inch horisontally.
-    pub(crate) x_res: u32,
+    x_res: u32,
 }
 
 impl Display for KraMetadata {
@@ -142,12 +134,12 @@ impl KraMetadata {
 pub(crate) struct KraMetadataEnd {
     //TODO: four base64 encoded bytes
     /// Projection background color.
-    pub(crate) projection_background_color: String,
+    projection_background_color: String,
     //TODO: four comma delimited bytes
     /// Global assistants color.
-    pub(crate) global_assistants_color: String,
+    global_assistants_color: String,
     /// Mirror axis configuration.
-    pub(crate) mirror_axis: MirrorAxis,
+    mirror_axis: MirrorAxis,
 }
 
 impl KraMetadataEnd {
@@ -173,17 +165,17 @@ impl KraMetadataEnd {
 
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
 pub(crate) struct MirrorAxis {
-    pub(crate) mirror_horizontal: bool,
-    pub(crate) mirror_vertical: bool,
-    pub(crate) lock_horizontal: bool,
-    pub(crate) lock_vertical: bool,
-    pub(crate) hide_horizontal_decoration: bool,
-    pub(crate) hide_vertical_decoration: bool,
+    mirror_horizontal: bool,
+    mirror_vertical: bool,
+    lock_horizontal: bool,
+    lock_vertical: bool,
+    hide_horizontal_decoration: bool,
+    hide_vertical_decoration: bool,
 
-    pub(crate) handle_size: OF<f32>,
-    pub(crate) horizontal_handle_position: OF<f32>,
-    pub(crate) vertical_handle_position: OF<f32>,
-    pub(crate) axis_position: [OF<f32>; 2],
+    handle_size: OF<f32>,
+    horizontal_handle_position: OF<f32>,
+    vertical_handle_position: OF<f32>,
+    axis_position: [OF<f32>; 2],
 }
 
 impl MirrorAxis {
