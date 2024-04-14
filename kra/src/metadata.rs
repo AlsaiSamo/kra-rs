@@ -211,7 +211,8 @@ impl KraMetadataEnd {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Hash)]
+#[derive(Debug, PartialEq, Eq, Clone, Hash, Getters)]
+#[getset(get = "pub", get_copy = "pub")]
 pub struct MirrorAxis {
     mirror_horizontal: bool,
     mirror_vertical: bool,
@@ -262,7 +263,8 @@ impl MirrorAxis {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Hash)]
+#[derive(Debug, PartialEq, Eq, Clone, Hash, Getters)]
+#[getset(get = "pub", get_copy = "pub")]
 pub struct DocInfoAbout {
     title: String,
     description: String,
@@ -278,7 +280,8 @@ pub struct DocInfoAbout {
     license: String,
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Hash)]
+#[derive(Debug, PartialEq, Eq, Clone, Hash, Getters)]
+#[getset(get = "pub", get_copy = "pub")]
 pub struct DocInfoAuthor {
     full_name: String,
     creator_first_name: String,
@@ -290,7 +293,8 @@ pub struct DocInfoAuthor {
 }
 
 /// File metadata.
-#[derive(Debug, PartialEq, Eq, Clone, Hash)]
+#[derive(Debug, PartialEq, Eq, Clone, Hash, Getters)]
+#[getset(get = "pub", get_copy = "pub")]
 pub struct DocumentInfo {
     about: DocInfoAbout,
     author: DocInfoAuthor,
