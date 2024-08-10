@@ -1,91 +1,73 @@
 
 # Table of Contents
 
-1.  [Introduction](#org97de986)
-    1.  [Features](#orga85e419)
-        1.  [Reading](#org6b01810)
-        2.  [Writing](#org094713a)
-        3.  [Rendering](#orge94b659)
-    2.  [Tasks](#orgb0d7304)
-        1.  [Publishing](#org345c2dc)
-        2.  [Refactoring](#org108473c)
-2.  [License](#orgade2f60)
+1.  [Introduction](#orgb67aec6)
+    1.  [Features](#org2140df0)
+        1.  [Parser](#orgf35dc31)
+    2.  [Tasks](#org59f458e)
+        1.  [Restructure](#orge0de465)
+        2.  [Functionality](#org3dc8757)
+        3.  [Pre-publish](#org5bd6c0b)
+2.  [License](#org0abccc8)
 
 
-<a id="org97de986"></a>
+<a id="orgb67aec6"></a>
 
 # Introduction
 
-This is a library for reading `.kra` files.
+Reimplementation of Krita types and functions, and support for `.kra` files.
 
 
-<a id="orga85e419"></a>
+<a id="org2140df0"></a>
 
-## TODO Features
+## Features
 
 
-<a id="org6b01810"></a>
+<a id="orgf35dc31"></a>
 
-### TODO Reading
+### Parser
 
 -   [-] Parsing metadata
-    -   [X] Supports these layer types:
-        1.  PaintLayer
-        2.  GroupLayer
-        3.  FilterMask
-        4.  SelectionMask
-    -   [ ] Does not support these layer types (but adding support should be easy):
-        1.  FileLayer
-        2.  FilterLayer
-        3.  FillLayer
-        4.  CloneLayer
-        5.  VectorLayer
-        6.  TransparencyMask
-        7.  TransformMask
-        8.  ColorizeMask
+    -   [X] Builds the image as a tree of nodes
     -   [ ] It does not register what layer was selected at the moment of saving (attribute `selected="true"`).
 -   [ ] Extracting images
 
 
-<a id="org094713a"></a>
+<a id="org59f458e"></a>
 
-### Writing
-
-Currently, there are no plans to support editing parsed data and writing `.kra` files outside of Krita.
-This may change in the future.
+## Tasks
 
 
-<a id="orge94b659"></a>
+<a id="orge0de465"></a>
 
-### Rendering
+### CURRENT Restructure
 
-Rendering is best be left to a different crate.
-
-
-<a id="orgb0d7304"></a>
-
-## TODO Tasks
+Currently, only loader is implemented, and it only works with the XML metadata.
+Loader should be split away into `kra_file`, while `kra` reimplements core Krita items.
 
 
-<a id="org345c2dc"></a>
+<a id="org3dc8757"></a>
 
-### CURRENT Publishing
+### NEXT Functionality
 
--   [ ] Docs
+-   [ ] Core types
+    Composition operators/filters, color, etc.
+-   [ ] Configured loader
+    Toggle data loading, image converting, SVG interpreting, etc.
+
+
+<a id="org5bd6c0b"></a>
+
+### NEXT Pre-publish
+
 -   [ ] Tests
 -   [ ] Examples
+-   [ ] Docs
 
 
-<a id="org108473c"></a>
-
-### Refactoring
-
--   [ ] Generate parsing code instead of writing it by hand.
-
-
-<a id="orgade2f60"></a>
+<a id="org0abccc8"></a>
 
 # License
 
-The library is licensed under GPL 3.0 because some of its code is or will be adapted from Krita&rsquo;s.
+The library is licensed under GPL 3.0 as it is a rewrite of Krita&rsquo;s source code.
 

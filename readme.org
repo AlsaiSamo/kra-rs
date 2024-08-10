@@ -1,40 +1,23 @@
 * Introduction
-This is a library for reading =.kra= files.
-
-** TODO Features
-*** TODO Reading
+Reimplementation of Krita types and functions, and support for =.kra= files.
+** Features
+*** Parser
 + [-] Parsing metadata
-  - [X] Supports these layer types:
-    1. PaintLayer
-    2. GroupLayer
-    3. FilterMask
-    4. SelectionMask
-    5. FileLayer
-    6. FilterLayer
-    7. FillLayer
-    8. CloneLayer
-    9. VectorLayer
-    10. TransparencyMask
-    11. TransformMask
-    12. ColorizeMask
+  - [X] Builds the image as a tree of nodes
   - [ ] It does not register what layer was selected at the moment of saving (attribute ~selected="true"~).
 + [ ] Extracting images
-*** Writing
-Currently, there are no plans to support editing parsed data and writing =.kra= files outside of Krita.
-This may change in the future.
-*** Rendering
-Rendering is best be left to a different crate.
-** TODO Tasks
-*** NEXT Finish preparing other layers
-As noted [[*Reading][here]]
-*** NEXT Publishing
-+ [ ] Docs
+** Tasks
+*** CURRENT Restructure
+Currently, only loader is implemented, and it only works with the XML metadata.
+Loader should be split away into =kra_file=, while =kra= reimplements core Krita items.
+*** NEXT Functionality
++ [ ] Core types
+  Composition operators/filters, color, etc.
++ [ ] Configured loader
+  Toggle data loading, image converting, SVG interpreting, etc.
+*** NEXT Pre-publish
 + [ ] Tests
 + [ ] Examples
-*** CURRENT Refactoring
-+ [ ] Consider moving (or similar action) license and readme to =kra=, in some way
-  - This is because the crate itself needs to have the license, at the source root, not at the repo's root.
-  - Do note that =kra-macro= is to be published too, and it probably should be under the same license terms too.
-    Copy or hardlink it to there too?
++ [ ] Docs
 * License
-The library is licensed under GPL 3.0 because some of its code is or will be adapted from Krita's.
+The library is licensed under GPL 3.0 as it is a rewrite of Krita's source code.

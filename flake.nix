@@ -14,7 +14,7 @@
     };
     flake-utils.url = "github:numtide/flake-utils";
   };
-  outputs = input @ {
+  outputs = {
     self,
     nixpkgs,
     crane,
@@ -28,7 +28,8 @@
         inherit system;
         overlays = [(import rust-overlay)];
       };
-      toolchain = pkgs.rust-bin.selectLatestNightlyWith (t: t.default);
+      #toolchain = pkgs.rust-bin.selectLatestNightlyWith (t: t.default);
+      toolchain = pkgs.rust-bin.fromRustupToolchainFile ./rust-toolchain;
       craneLib = (crane.mkLib pkgs).overrideToolchain toolchain;
 
       mkCrate = name: craneLib.buildPackage {
