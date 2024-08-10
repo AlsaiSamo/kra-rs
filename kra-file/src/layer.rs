@@ -383,6 +383,8 @@ pub enum InTimeline {
 /// Whether onionskinning is enabled.
 pub type Onionskin = bool;
 
+// Data common to all node types (fields of Node, except for node_type and masks)
+// This type is internal to the library
 #[derive(Getters, ParseTag)]
 #[getset(get = "pub", get_copy = "pub")]
 pub(crate) struct CommonNodeProps {
@@ -694,6 +696,7 @@ impl TransparencyMaskProps {
         TransparencyMaskProps()
     }
 }
+
 // Same here
 #[derive(Debug)]
 pub struct TransformMaskProps();

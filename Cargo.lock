@@ -285,17 +285,7 @@ dependencies = [
 
 [[package]]
 name = "kra"
-version = "0.1.0"
-dependencies = [
- "getset",
- "kra-macro",
- "ordered-float",
- "quick-xml",
- "thiserror",
- "uuid",
- "uuid-simd",
- "zip",
-]
+version = "0.0.1"
 
 [[package]]
 name = "kra-macro"
@@ -306,6 +296,20 @@ dependencies = [
  "quote",
  "syn 2.0.41",
  "trybuild",
+]
+
+[[package]]
+name = "kra_file"
+version = "0.1.0"
+dependencies = [
+ "getset",
+ "kra-macro",
+ "ordered-float",
+ "quick-xml",
+ "thiserror",
+ "uuid",
+ "uuid-simd",
+ "zip",
 ]
 
 [[package]]

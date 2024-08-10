@@ -41,13 +41,15 @@
           ];
       };
 
+      kra-file = mkCrate "kra-file";
       kra = mkCrate "kra";
     in {
       checks = {
-        inherit kra;
+        inherit kra-file kra;
       };
 
       packages = {
+        kra-file = kra-file;
         kra = kra;
         default = self.packages.kra;
       };

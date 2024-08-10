@@ -2,5 +2,6 @@
 resolver = "2"
 
 members = [
-  "kra"
+ "kra"
+, "kra-file"
 , "kra-macro"]

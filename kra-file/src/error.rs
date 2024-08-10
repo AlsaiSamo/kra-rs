@@ -5,6 +5,8 @@ use std::{io, path::PathBuf, string::FromUtf8Error};
 use quick_xml::Reader;
 use thiserror::Error;
 
+//TODO: getter for the error string? for all these structs
+
 #[derive(Error, Debug, PartialEq, Eq, Clone, Hash)]
 #[error("unknown colorspace: {0}")]
 pub struct UnknownColorspace(pub(crate) String);
@@ -24,6 +26,8 @@ pub struct UnknownLayerType(pub(crate) String);
 #[derive(Error, Debug, PartialEq, Eq, Clone, Hash)]
 #[error("expected a mask, got: {0}")]
 pub struct MaskExpected(pub(crate) String);
+
+//TODO: instead of tuples, types? To make the inner strings un-editable
 
 #[derive(Debug, Clone, Error)]
 pub enum XmlError {
@@ -97,6 +101,11 @@ impl MetadataErrorReason {
         }
     }
 }
+
+//TODO: can buffer_pos be used to find line and column in the xml file?
+// 1. Make MetadataError
+// 2. Get a reader at the start of the file
+// 3. Find the location
 
 // Error that was thrown while parsing metadata, along with its location
 #[derive(Error, Debug)]

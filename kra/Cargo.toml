@@ -1,19 +1,9 @@
 [package]
 name = "kra"
-version = "0.1.0"
+version = "0.0.1"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[features]
+file = []
 
 [dependencies]
-zip = "0.6"
-thiserror="1.0"
-getset="0.1.2"
-quick-xml = "0.31"
-uuid-simd = "0.8.0"
-uuid = "1.2.2"
-ordered-float = "4.2.0"
-
-[dependencies.kra-macro]
-path = "../kra-macro"
-version = "0.1"
