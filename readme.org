@@ -1,23 +1,20 @@
 * Introduction
-Reimplementation of Krita types and functions, and support for =.kra= files.
+Parsing =.kra= files.
+For now, =kra-file= only parses the metadata of a file.
+The goal is to allow loading the files or creating them from scratch, and editing them.
+The project will be later implemented in two crates, one providing core library functionality, another - file access.
 ** Features
-*** Parser
-+ [-] Parsing metadata
-  - [X] Builds the image as a tree of nodes
-  - [ ] It does not register what layer was selected at the moment of saving (attribute ~selected="true"~).
-+ [ ] Extracting images
+*** Parse meta
++ File metadata
++ Layer metadata
+  Does not parse ~selected="true"~ property, which indicates the layer that should be selected when loading the file.
 ** Tasks
-*** CURRENT Restructure
-Currently, only loader is implemented, and it only works with the XML metadata.
-Loader should be split away into =kra_file=, while =kra= reimplements core Krita items.
-*** NEXT Functionality
-+ [ ] Core types
-  Composition operators/filters, color, etc.
-+ [ ] Configured loader
-  Toggle data loading, image converting, SVG interpreting, etc.
-*** NEXT Pre-publish
-+ [ ] Tests
-+ [ ] Examples
-+ [ ] Docs
+*** CURRENT Refresh metadata parsing
+It should actually work.
+*** CURRENT Refresh library interface, docs
+*** NEXT Raster layers
++ Extract
++ Decode
++ Encode
 * License
-The library is licensed under GPL 3.0 as it is a rewrite of Krita's source code.
+The library is licensed under GPL 3.0.

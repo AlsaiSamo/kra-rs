@@ -18,6 +18,9 @@ quick-xml = "0.31"
 uuid-simd = "0.8.0"
 uuid = "1.2.2"
 ordered-float = "4.2.0"
+enum-as-inner = "0.6.1"
+defile = "0.2.1"
+paste = "1.0.15"
 
 [dependencies.kra-macro]
 path = "../kra-macro"

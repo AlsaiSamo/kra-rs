@@ -25,6 +25,13 @@ const DOCUMENTINFO_XMLNS: &str = r"http://www.calligra.org/DTD/document-info";
 const SYNTAX_VERSION: &str = "2.0";
 const MIMETYPE: &str = "application/x-kra";
 
+// TODO: implement missing parsable structures
+// TODO: parser should not expect that all structures will be present and
+// that they will be present in the given order.
+// Rely on Krita's code on this.
+
+// TODO: add guides
+// TODO: look up what stuff can exist
 /// Metadata of the image.
 #[derive(Debug, PartialEq, Eq, Clone, Hash, Getters)]
 #[getset(get = "pub", get_copy = "pub")]
@@ -213,6 +220,7 @@ impl KraMetadataEnd {
 
 #[derive(Debug, PartialEq, Eq, Clone, Hash, Getters)]
 #[getset(get = "pub", get_copy = "pub")]
+/// Mirroring axis properties.
 pub struct MirrorAxis {
     mirror_horizontal: bool,
     mirror_vertical: bool,

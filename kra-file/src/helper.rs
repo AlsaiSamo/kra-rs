@@ -76,7 +76,11 @@ where
 {
     match attr.unescape_value()?.parse::<T>() {
         Ok(item) => Ok(item),
-        Err(what) => Err(XmlError::ValueError(what.to_string())),
+        Err(what) => Err(XmlError::ValueError(format!(
+            "{} \"{}\"",
+            what,
+            attr.unescape_value().unwrap()
+        ))),
     }
 }
 
@@ -86,7 +90,11 @@ pub(crate) fn parse_bool(attr: Attribute) -> Result<bool, XmlError> {
     match attr.unescape_value()?.as_ref() {
         "1" => Ok(true),
         "0" => Ok(false),
-        what => Err(XmlError::ValueError(what.to_string())),
+        what => Err(XmlError::ValueError(format!(
+            "{} \"{}\"",
+            what,
+            attr.unescape_value().unwrap()
+        ))),
     }
 }
 
@@ -112,7 +120,7 @@ pub(crate) fn push_and_parse_bool(reader: &mut XmlReader<&[u8]>) -> Result<bool,
     Ok(parse_bool(attr)?)
 }
 
-//Starts immed. before the start tag
+//Starts immediately before the start tag
 pub(crate) fn get_text_between_tags<'a>(
     reader: &mut XmlReader<&'a [u8]>,
 ) -> Result<Cow<'a, str>, XmlError> {

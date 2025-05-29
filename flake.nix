@@ -42,16 +42,17 @@
       };
 
       kra-file = mkCrate "kra-file";
-      kra = mkCrate "kra";
+      # kra = mkCrate "kra";
     in {
       checks = {
-        inherit kra-file kra;
+        # inherit kra-file kra;
+        inherit kra-file;
       };
 
       packages = {
         kra-file = kra-file;
-        kra = kra;
-        default = self.packages.kra;
+        # kra = kra;
+        default = self.packages.kra-file;
       };
 
       devShells.default = pkgs.mkShell {

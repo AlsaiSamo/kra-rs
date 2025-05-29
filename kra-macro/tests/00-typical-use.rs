@@ -1,3 +1,5 @@
+#![allow(unreachable_expression)]
+
 use kra_macro::ParseTag;
 
 #[derive(ParseTag)]
