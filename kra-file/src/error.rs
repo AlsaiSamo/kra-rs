@@ -1,6 +1,6 @@
 //! Error types for the library.
 
-use std::{io, path::PathBuf, string::FromUtf8Error};
+use std::{io, path::PathBuf, str::Utf8Error, string::FromUtf8Error};
 
 use quick_xml::Reader;
 use thiserror::Error;
@@ -27,10 +27,9 @@ pub struct UnknownLayerType(pub(crate) String);
 #[error("expected a mask, got: {0}")]
 pub struct MaskExpected(pub(crate) String);
 
-//TODO: instead of tuples, types? To make the inner strings un-editable
-
 #[derive(Debug, Clone, Error)]
 pub enum XmlError {
+    // TODO: this feels redundant as we already have EventError.
     // Error used when we check some property
     #[error("assertion about XML metadata failed: expected {0}, got {1}")]
     AssertionFailed(&'static str, String),
@@ -51,7 +50,13 @@ pub enum XmlError {
     ValueError(String),
 
     #[error("could not interpret string as utf-8: {0}")]
-    EncodingError(#[from] FromUtf8Error),
+    EncodingError(#[from] Utf8Error),
+}
+
+impl From<FromUtf8Error> for XmlError {
+    fn from(value: FromUtf8Error) -> Self {
+        XmlError::EncodingError(value.utf8_error())
+    }
 }
 
 // Whatever error was thrown while parsing metadata
@@ -79,9 +84,15 @@ impl From<quick_xml::Error> for MetadataErrorReason {
     }
 }
 
+impl From<Utf8Error> for MetadataErrorReason {
+    fn from(value: Utf8Error) -> Self {
+        MetadataErrorReason::XmlError(XmlError::EncodingError(value))
+    }
+}
+
 impl From<FromUtf8Error> for MetadataErrorReason {
     fn from(value: FromUtf8Error) -> Self {
-        MetadataErrorReason::XmlError(XmlError::EncodingError(value))
+        MetadataErrorReason::XmlError(XmlError::EncodingError(value.utf8_error()))
     }
 }
 

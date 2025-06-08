@@ -1,6 +1,6 @@
 use quick_xml::{
-    events::{BytesStart, Event},
     Reader,
+    events::{BytesStart, Event},
 };
 
 use crate::{
@@ -46,7 +46,7 @@ pub struct ParsingConfiguration {
 }
 
 //Starts immediately before the required <mask> | <mask/>
-pub(crate) fn parse_mask(
+pub(crate) fn parse_masks(
     reader: &mut Reader<&[u8]>,
     // TODO: handle loading files
     conf: ParsingConfiguration,
@@ -106,7 +106,7 @@ pub(crate) fn parse_mask(
                 return Err(MetadataErrorReason::XmlError(XmlError::EventError(
                     "empty or end event",
                     event_to_string(&other)?,
-                )))
+                )));
             }
         }
     }
@@ -145,12 +145,9 @@ pub(crate) fn parse_layer(
     let common = CommonNodeProps::parse_tag(&tag)?;
 
     let node_type = event_get_attr(&tag, "nodetype")?.unescape_value()?;
-    let node_type = match node_type.as_ref() {
-        // TODO: grouplayer
+    let mut node_type = match node_type.as_ref() {
         "grouplayer" => {
-            // todo!()
-            // files.insert(common.uuid().to_owned(), NodeData::DoesNotExist);
-            // NodeType::GroupLayer(GroupLayerProps::parse_tag(&tag, reader, files)?)
+            // TODO: give the files to the group layer
             Node::GroupLayer(GroupLayer::new(
                 common,
                 GroupLayerProps::parse_tag(&tag, reader, conf)?,
@@ -196,11 +193,15 @@ pub(crate) fn parse_layer(
         }
     };
 
-    let masks = match (could_contain_masks, &node_type) {
-        // TODO: uncomment when group layers get supported
-        // (_, Node::GroupLayer(_)) => None,
-        (false, _) => None,
-        (true, _) => Some(parse_mask(reader, conf)?),
+    match (could_contain_masks, &node_type) {
+        (_, Node::GroupLayer(_)) => {}
+        (false, _) => {}
+        (true, _) => {
+            let masks = parse_masks(reader, conf)?;
+            // SAFETY: checked that the node contains masks
+            // (because the event was not empty)
+            node_type.set_masks(masks).unwrap();
+        }
     };
 
     Ok(node_type)
@@ -238,6 +239,6 @@ pub(crate) fn get_layers(
         // </layer>
         let event = next_xml_event(reader)?;
         event_unwrap_as_end(event)?;
-    }
+    };
     Ok(layers)
 }

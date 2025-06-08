@@ -7,8 +7,8 @@ edition = "2021"
 
 [features]
 default = []
-#TODO: document feature (it disallows working with data)
-no_data = []
+#TODO: implement this feature (do not load data)
+#no_data = []
 
 [dependencies]
 zip = "0.6"

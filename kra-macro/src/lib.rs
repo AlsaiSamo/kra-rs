@@ -70,6 +70,7 @@ fn gen_get_attr(item: &Field) -> [TokenStream2; 2] {
         .unwrap_or(Ok(XmlAttr::default()))
         .unwrap();
     let qname = attr.qname.unwrap_or(ident.to_string());
+    let has_fun_override = attr.fun_override.is_some().to_owned();
     let fun_override = attr
         .fun_override
         .unwrap_or(format!("parse_attr({})?", ident));
@@ -94,8 +95,10 @@ fn gen_get_attr(item: &Field) -> [TokenStream2; 2] {
             let #ident = event_get_attr(&tag, #qname)?;
         },
     };
-    let tokens_second = quote! {
-        #ident: #fun_override
+    // if function is overridden and data is not being extracted, insert the item as-is
+    let tokens_second = match (extract_data, has_fun_override) {
+        (Some(false), true) => quote! {#ident},
+        (_, _) => quote! {#ident: #fun_override},
     };
     [tokens_first, tokens_second]
 }

@@ -1,8 +1,12 @@
 //! Types that make up file's metadata
 
-use std::fmt::{self, Display};
+use std::{
+    fmt::{self, Display},
+    str,
+};
 
 use getset::Getters;
+use quick_xml::name::QName;
 use quick_xml::{events::Event, reader::Reader as XmlReader};
 
 use crate::helper::{
@@ -11,8 +15,8 @@ use crate::helper::{
     push_and_parse_bool, push_and_parse_value,
 };
 use crate::{
-    error::{MetadataErrorReason, XmlError},
     Colorspace,
+    error::{MetadataErrorReason, XmlError},
 };
 
 use ordered_float::OrderedFloat as OF;
@@ -25,13 +29,7 @@ const DOCUMENTINFO_XMLNS: &str = r"http://www.calligra.org/DTD/document-info";
 const SYNTAX_VERSION: &str = "2.0";
 const MIMETYPE: &str = "application/x-kra";
 
-// TODO: implement missing parsable structures
-// TODO: parser should not expect that all structures will be present and
-// that they will be present in the given order.
-// Rely on Krita's code on this.
 
-// TODO: add guides
-// TODO: look up what stuff can exist
 /// Metadata of the image.
 #[derive(Debug, PartialEq, Eq, Clone, Hash, Getters)]
 #[getset(get = "pub", get_copy = "pub")]
@@ -55,13 +53,28 @@ pub struct KraMetadata {
     /// Dots per inch horisontally.
     x_res: u32,
 
-    //TODO: look into KraMetadataEnd for these two fields
+    // NOTE: these optional fields fit into KraMetadataEnd
+    // (and they will not be implemented properly until Harujion
+    // or some other project starts to need them, as they are out of the current scope)
+    // Their order does not matter much as the loading routine is a loop over
+    // open/empty events.
     /// Projection background color.
-    projection_background_color: String,
+    projection_background_color: Option<String>,
     /// Global assistants color.
-    global_assistants_color: String,
+    global_assistants_color: Option<String>,
+    // TODO: color history
+    // TODO: proofing warning color
+    // TODO: animation metadata
+    // TODO: compositions
+    // TODO: grid
+    // TODO: guides
     /// Mirror axis configuration.
-    mirror_axis: MirrorAxis,
+    mirror_axis: Option<MirrorAxis>,
+    // TODO: assistants
+    // TODO: audio
+    // TODO: palettes
+    // TODO: resources
+    // TODO: annotations
 }
 
 impl Display for KraMetadata {
@@ -114,8 +127,25 @@ pub(crate) struct KraMetadataStart {
 
 impl KraMetadataStart {
     pub(crate) fn from_xml(reader: &mut XmlReader<&[u8]>) -> Result<Self, MetadataErrorReason> {
-        //TODO: do we need to check this declaration properly?
-        next_xml_event(reader)?;
+        let event = next_xml_event(reader)?;
+        // TODO: error out properly here
+        match event {
+            Event::Decl(decl) => {
+                if decl.version()? != b"1.0".as_ref() {
+                    todo!()
+                };
+                // TODO: rewrite into unwrap_or()
+                match decl.encoding() {
+                    Some(enc) => {
+                        if enc? != b"UTF-8".as_ref() {
+                            todo!()
+                        }
+                    }
+                    None => todo!(),
+                };
+            }
+            _ => todo!(),
+        };
 
         let event = next_xml_event(reader)?;
         let doctype = event_unwrap_as_doctype(event)?.unescape()?;
@@ -164,7 +194,8 @@ impl KraMetadataStart {
             event_get_attr(&image_props, "colorspacename")?
                 .unescape_value()?
                 .as_ref(),
-        )?;
+        )
+        .unwrap_or(Colorspace::RGBA);
         let height = event_get_attr(&image_props, "height")?;
         let width = event_get_attr(&image_props, "width")?;
         let x_res = event_get_attr(&image_props, "x-res")?;
@@ -184,31 +215,78 @@ impl KraMetadataStart {
     }
 }
 
+// TODO: proper types for projection background color, global asisstants color, etc.
 /// Data at the end of `maindoc.xml`
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
 pub(crate) struct KraMetadataEnd {
     //TODO: four base64 encoded bytes
     /// Projection background color.
-    projection_background_color: String,
+    projection_background_color: Option<String>,
     //TODO: four comma delimited bytes
     /// Global assistants color.
-    global_assistants_color: String,
+    global_assistants_color: Option<String>,
     /// Mirror axis configuration.
-    mirror_axis: MirrorAxis,
+    mirror_axis: Option<MirrorAxis>,
+    // TODO: implement other things
 }
 
 impl KraMetadataEnd {
     pub(crate) fn from_xml(reader: &mut XmlReader<&[u8]>) -> Result<Self, MetadataErrorReason> {
-        //<ProjectionBackgroundColor ... />
-        let event = next_xml_event(reader)?;
-        let tag = event_unwrap_as_empty(event)?;
-        let projection_background_color = parse_attr(event_get_attr(&tag, "ColorData")?)?;
+        let mut projection_background_color = None;
+        let mut global_assistants_color = None;
+        let mut mirror_axis = None;
 
-        //<GlobalAssistantsColor ... />
-        let event = next_xml_event(reader)?;
-        let tag = event_unwrap_as_empty(event)?;
-        let global_assistants_color = parse_attr(event_get_attr(&tag, "SimpleColorData")?)?;
-        let mirror_axis = MirrorAxis::from_xml(reader)?;
+        while let event = next_xml_event(reader)? {
+            match event {
+                // TODO: many items are not going to be parsed until they are properly implemented
+                // TODO: palettes, resources probably go into Start?
+                Event::Start(tag) => match str::from_utf8(&tag)? {
+                    "MirrorAxis" => {
+                        // TODO: fix parsing of mirror axis, then uncomment
+                        // mirror_axis = Some(MirrorAxis::from_xml(reader)?)
+                        reader.read_to_end(QName("MirrorAxis".as_ref()))?;
+                    }
+                    "ProofingWarningColor" => {
+                        reader.read_to_end(QName("ProofingWarningColor".as_ref()))?;
+                    }
+                    "guides" => {
+                        reader.read_to_end(QName("guides".as_ref()))?;
+                    }
+                    "animation" => {
+                        reader.read_to_end(QName("animation".as_ref()))?;
+                    }
+                    other => {
+                        reader.read_to_end(QName(other.as_ref()))?;
+                    }
+                },
+                Event::Empty(tag) => match str::from_utf8(&tag)? {
+                    "ProjectionBackgroundColor" => {
+                        projection_background_color =
+                            Some(parse_attr(event_get_attr(&tag, "ColorData")?)?)
+                    }
+                    "GlobalAssistantsColor" => {
+                        global_assistants_color =
+                            Some(parse_attr(event_get_attr(&tag, "SimpleColorData")?)?)
+                    }
+                    _ => {}
+                },
+                Event::End(tag) => match str::from_utf8(&tag)? {
+                    "IMAGE" => break,
+                    what => {
+                        return Err(MetadataErrorReason::XmlError(XmlError::EventError(
+                            "</IMAGE>",
+                            what.to_string(),
+                        )));
+                    }
+                },
+                what => {
+                    return Err(MetadataErrorReason::XmlError(XmlError::EventError(
+                        "start event, empty event or </IMAGE>",
+                        event_to_string(&what)?,
+                    )));
+                }
+            }
+        }
 
         Ok(KraMetadataEnd {
             projection_background_color,

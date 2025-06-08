@@ -9,9 +9,9 @@ use kra_macro::ParseTag;
 use quick_xml::events::BytesStart;
 use uuid::Uuid;
 
+use crate::Colorspace;
 use crate::error::{MetadataErrorReason, UnknownCompositeOp, XmlError};
 use crate::helper::{event_get_attr, parse_attr, parse_bool};
-use crate::Colorspace;
 
 // TODO: move the types to a separate module.
 // Later, when creating the types crate, move them there.
@@ -393,7 +393,7 @@ pub enum Node {
 
 // NOTE: $$ not stabilised :(
 // Forward getters from Node enum to the inner type if it is possible
-macro_rules! node_enum_func {
+macro_rules! node_enum_getter {
     ($funcname:ident -> $returntype:ty, [$($item:ident),*]) => {
     #[doc = concat!("Return reference to inner field `", stringify!($funcname), "` if the node of this type contains it")]
     pub fn $funcname(&self) -> Option<$returntype> {
@@ -401,6 +401,24 @@ macro_rules! node_enum_func {
             $(Node::$item(node) => {Some(node.$funcname())},)*
             #[allow(unreachable_patterns)]
             _ => None
+        }
+    }
+    };
+}
+
+// NOTE: the funcname should follow getset's naming scheme
+macro_rules! node_enum_setter {
+    ($funcname:ident($input:ty), [$($item:ident),*]) => {
+    #[doc = concat!("Set inner field `", stringify!($funcname), "` from `", stringify!($input),"` if the node of this type has this field")]
+    pub fn $funcname(&mut self, input: $input) -> Result<(),()> {
+        match self {
+            $(Node::$item(node) => {
+                // Some(node.$funcname())
+                node.$funcname(input);
+                Ok(())
+            },)*
+            #[allow(unreachable_patterns)]
+            _ => Err(())
         }
     }
     };
@@ -485,66 +503,78 @@ impl Node {
         }
     }
     // TODO: common node props should not be behind Option
-    node_enum_func!(name -> &str, [
+    node_enum_getter!(name -> &str, [
         PaintLayer, FileLayer, FilterLayer, FillLayer, CloneLayer, ColorizeMask,
         VectorLayer, GroupLayer, FilterMask, SelectionMask, TransparencyMask, TransformMask
     ]);
-    node_enum_func!(uuid -> &Uuid, [
+    node_enum_getter!(uuid -> &Uuid, [
         PaintLayer, FileLayer, FilterLayer, FillLayer, CloneLayer, ColorizeMask,
         VectorLayer, GroupLayer, FilterMask, SelectionMask, TransparencyMask, TransformMask
     ]);
-    node_enum_func!(filename -> &str, [
+    node_enum_getter!(filename -> &str, [
         PaintLayer, FileLayer, FilterLayer, FillLayer, CloneLayer, ColorizeMask,
         VectorLayer, GroupLayer, FilterMask, SelectionMask, TransparencyMask, TransformMask
     ]);
-    node_enum_func!(visible -> bool, [
+    node_enum_getter!(visible -> bool, [
         PaintLayer, FileLayer, FilterLayer, FillLayer, CloneLayer, ColorizeMask,
         VectorLayer, GroupLayer, FilterMask, SelectionMask, TransparencyMask, TransformMask
     ]);
-    node_enum_func!(locked -> bool, [
+    node_enum_getter!(locked -> bool, [
         PaintLayer, FileLayer, FilterLayer, FillLayer, CloneLayer, ColorizeMask,
         VectorLayer, GroupLayer, FilterMask, SelectionMask, TransparencyMask, TransformMask
     ]);
-    node_enum_func!(colorlabel -> u32, [
+    node_enum_getter!(colorlabel -> u32, [
         PaintLayer, FileLayer, FilterLayer, FillLayer, CloneLayer, ColorizeMask,
         VectorLayer, GroupLayer, FilterMask, SelectionMask, TransparencyMask, TransformMask
     ]);
-    node_enum_func!(y -> i32, [
+    node_enum_getter!(y -> i32, [
         PaintLayer, FileLayer, FilterLayer, FillLayer, CloneLayer, ColorizeMask,
         VectorLayer, GroupLayer, FilterMask, SelectionMask, TransparencyMask, TransformMask
     ]);
-    node_enum_func!(x -> i32, [
+    node_enum_getter!(x -> i32, [
         PaintLayer, FileLayer, FilterLayer, FillLayer, CloneLayer, ColorizeMask,
         VectorLayer, GroupLayer, FilterMask, SelectionMask, TransparencyMask, TransformMask
     ]);
-    node_enum_func!(in_timeline -> InTimeline, [
+    node_enum_getter!(in_timeline -> InTimeline, [
         PaintLayer, FileLayer, FilterLayer, FillLayer, CloneLayer, ColorizeMask,
         VectorLayer, GroupLayer, FilterMask, SelectionMask, TransparencyMask, TransformMask
     ]);
-    node_enum_func!(composite_op -> CompositeOp, [
+    node_enum_getter!(composite_op -> CompositeOp, [
         PaintLayer, FileLayer, FilterLayer, FillLayer, CloneLayer, ColorizeMask, VectorLayer, GroupLayer
     ]);
-    node_enum_func!(collapsed -> bool, [
+    node_enum_getter!(collapsed -> bool, [
         PaintLayer, FileLayer, FilterLayer, FillLayer, CloneLayer, VectorLayer, GroupLayer
     ]);
-    node_enum_func!(opacity -> u8, [
+    node_enum_getter!(opacity -> u8, [
         PaintLayer, FileLayer, FilterLayer, FillLayer, CloneLayer, VectorLayer, GroupLayer
     ]);
-    node_enum_func!(channel_flags -> &str, [
+    node_enum_getter!(channel_flags -> &str, [
         PaintLayer, FileLayer, FilterLayer, FillLayer, CloneLayer, VectorLayer
     ]);
-    node_enum_func!(masks -> &[Node], [
+    node_enum_getter!(masks -> &[Node], [
         PaintLayer, FileLayer, FilterLayer, FillLayer, CloneLayer, VectorLayer
     ]);
-    node_enum_func!(colorspace -> Colorspace, [
+    node_enum_getter!(colorspace -> Colorspace, [
         PaintLayer, FileLayer, ColorizeMask
     ]);
-    node_enum_func!(filter_name -> &str, [
+    node_enum_getter!(filter_name -> &str, [
         FilterLayer, FilterMask
     ]);
-    node_enum_func!(filter_version -> u32, [
+    node_enum_getter!(filter_version -> u32, [
         FilterLayer, FilterMask
     ]);
+
+    node_enum_setter!(
+        set_masks(Vec<Node>),
+        [
+            PaintLayer,
+            FileLayer,
+            FilterLayer,
+            FillLayer,
+            CloneLayer,
+            VectorLayer
+        ]
+    );
 }
 
 // TODO: proper docs for functions
@@ -804,6 +834,7 @@ macro_rules! make_node {
         }
     ) => {
         #[derive(Debug, Clone, Setters)]
+        #[getset(set)]
         $(#[$structmeta])*
         pub struct $name {
             // Common node props
@@ -1354,7 +1385,7 @@ fn parse_in_timeline(input: &str, tag: &BytesStart) -> Result<InTimeline, Metada
         what => {
             return Err(MetadataErrorReason::XmlError(XmlError::ValueError(
                 what.to_string(),
-            )))
+            )));
         }
     }
 }

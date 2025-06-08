@@ -2,14 +2,14 @@ use std::borrow::Cow;
 use std::fmt::Display;
 use std::str::FromStr;
 
+use quick_xml::Reader as XmlReader;
 use quick_xml::events::attributes::Attribute;
 use quick_xml::events::{BytesEnd, BytesStart, BytesText, Event};
-use quick_xml::Reader as XmlReader;
 
 use crate::error::XmlError;
 
 // These are helper functions to declutter main code
-#[inline]
+
 pub(crate) fn next_xml_event<'a>(reader: &mut XmlReader<&'a [u8]>) -> Result<Event<'a>, XmlError> {
     match reader.read_event() {
         Ok(event) => Ok(event),
@@ -17,7 +17,6 @@ pub(crate) fn next_xml_event<'a>(reader: &mut XmlReader<&'a [u8]>) -> Result<Eve
     }
 }
 
-#[inline]
 pub(crate) fn event_unwrap_as_doctype(event: Event) -> Result<BytesText, XmlError> {
     match event {
         Event::DocType(event) => Ok(event),
@@ -25,7 +24,6 @@ pub(crate) fn event_unwrap_as_doctype(event: Event) -> Result<BytesText, XmlErro
     }
 }
 
-#[inline]
 pub(crate) fn event_unwrap_as_start(event: Event) -> Result<BytesStart, XmlError> {
     match event {
         Event::Start(event) => Ok(event),
@@ -36,7 +34,6 @@ pub(crate) fn event_unwrap_as_start(event: Event) -> Result<BytesStart, XmlError
     }
 }
 
-#[inline]
 pub(crate) fn event_unwrap_as_empty(event: Event) -> Result<BytesStart, XmlError> {
     match event {
         Event::Empty(event) => Ok(event),
@@ -47,7 +44,6 @@ pub(crate) fn event_unwrap_as_empty(event: Event) -> Result<BytesStart, XmlError
     }
 }
 
-#[inline]
 pub(crate) fn event_unwrap_as_end(event: Event) -> Result<BytesEnd, XmlError> {
     match event {
         Event::End(event) => Ok(event),
@@ -55,7 +51,6 @@ pub(crate) fn event_unwrap_as_end(event: Event) -> Result<BytesEnd, XmlError> {
     }
 }
 
-#[inline]
 pub(crate) fn event_get_attr<'a>(
     tag: &'a BytesStart<'a>,
     name: &str,
@@ -68,7 +63,6 @@ pub(crate) fn event_get_attr<'a>(
 
 //Does not work on bools, use parse_bool() instead
 // This is because xml data stores bools as 1/0 while parse::<bool> expects true/false
-#[inline]
 pub(crate) fn parse_attr<T>(attr: Attribute) -> Result<T, XmlError>
 where
     T: FromStr,
@@ -85,7 +79,6 @@ where
 }
 
 // parse_attr() but for bools, refer to the comment above parse_attr()
-#[inline]
 pub(crate) fn parse_bool(attr: Attribute) -> Result<bool, XmlError> {
     match attr.unescape_value()?.as_ref() {
         "1" => Ok(true),
@@ -99,7 +92,6 @@ pub(crate) fn parse_bool(attr: Attribute) -> Result<bool, XmlError> {
 }
 
 // gets next event and parses its value
-#[inline]
 pub(crate) fn push_and_parse_value<T>(reader: &mut XmlReader<&[u8]>) -> Result<T, XmlError>
 where
     T: FromStr,
@@ -112,7 +104,6 @@ where
 }
 
 //same but for bool
-#[inline]
 pub(crate) fn push_and_parse_bool(reader: &mut XmlReader<&[u8]>) -> Result<bool, XmlError> {
     let event = next_xml_event(reader)?;
     let tag = event_unwrap_as_empty(event)?;

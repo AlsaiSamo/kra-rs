@@ -1,6 +1,6 @@
 use std::{env::args, path::PathBuf};
 
-use kra_file::{layer::Node, parse::ParsingConfiguration, KraFile};
+use kra_file::{KraFile, layer::Node, parse::ParsingConfiguration};
 
 //print all nodes, recursively
 fn tree(node: &Node, depth: usize) {
