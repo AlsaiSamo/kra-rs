@@ -827,10 +827,10 @@ macro_rules! make_node {
         // name of the property struct (that is currently provided externally)
         $propsname:ident,
         {
-            // propsmeta is written in ##[] - currently unused, was meant to provide
+            // propsmeta is written in #+[] - currently unused, was meant to provide
             // meta to fields in property struct
             // fieldmeta is written in #[] - provides meta to fields in the struct
-            $($(##[$propsmeta:meta])* $(#[$fieldmeta:meta])* $field:ident:$type:ty),*
+            $($(#+[$propsmeta:meta])* $(#[$fieldmeta:meta])* $field:ident:$type:ty),*
         }
     ) => {
         #[derive(Debug, Clone, Setters)]

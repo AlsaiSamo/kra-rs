@@ -3,7 +3,7 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     crane = {
       url = "github:ipetkov/crane";
-      inputs.nixpkgs.follows = "nixpkgs";
+      # inputs.nixpkgs.follows = "nixpkgs";
     };
     rust-overlay = {
       url = "github:oxalica/rust-overlay";
@@ -28,8 +28,8 @@
         inherit system;
         overlays = [(import rust-overlay)];
       };
-      #toolchain = pkgs.rust-bin.selectLatestNightlyWith (t: t.default);
-      toolchain = pkgs.rust-bin.fromRustupToolchainFile ./rust-toolchain;
+      toolchain = pkgs.rust-bin.stable.latest.default;
+      #toolchain = pkgs.rust-bin.fromRustupToolchainFile ./rust-toolchain;
       craneLib = (crane.mkLib pkgs).overrideToolchain toolchain;
 
       mkCrate = name: craneLib.buildPackage {
