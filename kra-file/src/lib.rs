@@ -7,71 +7,26 @@
 
 #![warn(missing_docs)]
 
+#[cfg(not(feature = "data"))]
+pub mod dummy;
 pub mod error;
 pub(crate) mod helper;
 pub mod layer;
 pub mod metadata;
 pub mod parse;
 
-use std::{
-    fmt::{self, Display},
-    fs::File,
-    io::Read,
-    path::Path,
-};
+use std::{fs::File, io::Read, path::Path};
 
-use error::{ReadKraError, UnknownColorspace};
+use error::ReadKraError;
 use getset::Getters;
 use layer::Node;
 use metadata::{KraMetadata, KraMetadataEnd, KraMetadataStart};
 use parse::{ParsingConfiguration, get_layers};
 use zip::ZipArchive;
 
-use quick_xml::{Reader as XmlReader, reader::Config};
+use quick_xml::Reader as XmlReader;
 
 use crate::metadata::DocumentInfo;
-
-// TODO: fill out with more variants
-/// Colorspace identifier.
-#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
-#[non_exhaustive]
-#[derive(Default)]
-pub enum Colorspace {
-    /// Default RGBA colorspace.
-    #[default]
-    RGBA,
-}
-
-impl TryFrom<&str> for Colorspace {
-    type Error = UnknownColorspace;
-
-    fn try_from(value: &str) -> Result<Self, Self::Error> {
-        match value {
-            "RGBA" => Ok(Colorspace::RGBA),
-            // NOTE: these come from ConvertColorSpaceNames function from kis_kra_loader.cpp
-            // and are intended for old colorspacenames.
-            // "Grayscale + Alpha" => Ok(Colorspace::),
-            // "RgbAF32" => Ok(Colorspace::),
-            // "RgbbAF16" => Ok(Colorspace::),
-            // "CMYKA16" => Ok(Colorspace::),
-            // "GrayF32" => Ok(Colorspace::),
-            // "GRAYA16" => Ok(Colorspace::),
-            // "XyzAF16" => Ok(Colorspace::),
-            // "XyzAF32" => Ok(Colorspace::),
-            // "YCbCrA" => Ok(Colorspace::),
-            // "YCbCrAU16" => Ok(Colorspace::),
-            other => Err(UnknownColorspace(other.to_owned())),
-        }
-    }
-}
-
-impl Display for Colorspace {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Colorspace::RGBA => write!(f, "RGBA"),
-        }
-    }
-}
 
 /// A .kra file.
 #[derive(Debug, Getters)]

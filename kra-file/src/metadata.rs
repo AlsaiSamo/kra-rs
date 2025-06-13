@@ -9,15 +9,15 @@ use getset::Getters;
 use quick_xml::name::QName;
 use quick_xml::{events::Event, reader::Reader as XmlReader};
 
+use crate::error::{MetadataErrorReason, XmlError};
 use crate::helper::{
     event_get_attr, event_to_string, event_unwrap_as_doctype, event_unwrap_as_empty,
     event_unwrap_as_end, event_unwrap_as_start, get_text_between_tags, next_xml_event, parse_attr,
     push_and_parse_bool, push_and_parse_value,
 };
-use crate::{
-    Colorspace,
-    error::{MetadataErrorReason, XmlError},
-};
+
+#[cfg(not(feature = "data"))]
+use crate::dummy::Colorspace;
 
 use ordered_float::OrderedFloat as OF;
 

@@ -3,12 +3,12 @@ name = "kra_file"
 version = "0.1.0"
 edition = "2024"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [features]
 default = []
-#TODO: implement this feature (do not load data)
-#no_data = []
+#TODO: this should depend on `kra`.
+#If enabled, it'll use the types from that instead of `dummy` and will allow
+#using node data.
+data = []
 
 [dependencies]
 zip = "4.0"
