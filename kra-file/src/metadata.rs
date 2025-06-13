@@ -29,6 +29,8 @@ const DOCUMENTINFO_XMLNS: &str = r"http://www.calligra.org/DTD/document-info";
 const SYNTAX_VERSION: &str = "2.0";
 const MIMETYPE: &str = "application/x-kra";
 
+// TODO: krita's loading routine changes from time to time.
+// Select a commit some 5-8 years ago and compare that to the newest ones to confirm.
 
 /// Metadata of the image.
 #[derive(Debug, PartialEq, Eq, Clone, Hash, Getters)]
@@ -52,6 +54,8 @@ pub struct KraMetadata {
     y_res: u32,
     /// Dots per inch horisontally.
     x_res: u32,
+    // TODO: optional proofing information (starts at line 275)
+    // which probably should be parsed as it relates to how the image looks on the screen
 
     // NOTE: these optional fields fit into KraMetadataEnd
     // (and they will not be implemented properly until Harujion
@@ -127,25 +131,27 @@ pub(crate) struct KraMetadataStart {
 
 impl KraMetadataStart {
     pub(crate) fn from_xml(reader: &mut XmlReader<&[u8]>) -> Result<Self, MetadataErrorReason> {
-        let event = next_xml_event(reader)?;
-        // TODO: error out properly here
-        match event {
-            Event::Decl(decl) => {
-                if decl.version()? != b"1.0".as_ref() {
-                    todo!()
-                };
-                // TODO: rewrite into unwrap_or()
-                match decl.encoding() {
-                    Some(enc) => {
-                        if enc? != b"UTF-8".as_ref() {
-                            todo!()
-                        }
-                    }
-                    None => todo!(),
-                };
-            }
-            _ => todo!(),
-        };
+        next_xml_event(reader)?;
+        // TODO: rewrite this?
+        // match event {
+        //     Event::Decl(decl) => {
+        //         match decl.encoding() {
+        //             Some(enc) => {
+        //                 if enc? != b"UTF-8".as_ref() {
+        //                     todo!()
+        //                 }
+        //             }
+        //             // Assume UTF8
+        //             None => {},
+        //         };
+        //         let what = decl.version()?.into_owned();
+        //         if what != b"1.0".as_ref() {
+        //             let what = String::from_utf8(what)?;
+        //             return Err(MetadataErrorReason::XmlError(XmlError::AssertionFailed("1.0", what)))
+        //         };
+        //     }
+        //     _ => todo!(),
+        // };
 
         let event = next_xml_event(reader)?;
         let doctype = event_unwrap_as_doctype(event)?.unescape()?;
@@ -187,9 +193,12 @@ impl KraMetadataStart {
             )));
         };
 
+        // TODO: may not exist? Can this happen in modern Krita?
+        // If not, then assume it exists.
         let profile = event_get_attr(&image_props, "profile")?;
         let name = event_get_attr(&image_props, "name")?;
         let description = event_get_attr(&image_props, "description")?;
+        // NOTE: also accounts for variants listed in function convertColorSpaceNames.
         let colorspace = Colorspace::try_from(
             event_get_attr(&image_props, "colorspacename")?
                 .unescape_value()?
@@ -236,7 +245,8 @@ impl KraMetadataEnd {
         let mut global_assistants_color = None;
         let mut mirror_axis = None;
 
-        while let event = next_xml_event(reader)? {
+        loop {
+            let event = next_xml_event(reader)?;
             match event {
                 // TODO: many items are not going to be parsed until they are properly implemented
                 // TODO: palettes, resources probably go into Start?
@@ -349,6 +359,7 @@ impl MirrorAxis {
     }
 }
 
+/// Information about the file.
 #[derive(Debug, PartialEq, Eq, Clone, Hash, Getters)]
 #[getset(get = "pub", get_copy = "pub")]
 pub struct DocInfoAbout {
@@ -366,6 +377,7 @@ pub struct DocInfoAbout {
     license: String,
 }
 
+/// Information about the author of the file.
 #[derive(Debug, PartialEq, Eq, Clone, Hash, Getters)]
 #[getset(get = "pub", get_copy = "pub")]
 pub struct DocInfoAuthor {
@@ -388,8 +400,25 @@ pub struct DocumentInfo {
 
 impl DocumentInfo {
     pub(crate) fn from_xml(reader: &mut XmlReader<&[u8]>) -> Result<Self, MetadataErrorReason> {
-        //TODO: as with maindoc, this skips initial declaration
-        let _event = next_xml_event(reader)?;
+        let event = next_xml_event(reader)?;
+        // NOTE: similar to what maindoc parsing has (KraMetadataStart:from_xml())
+        // match event {
+        //     Event::Decl(decl) => {
+        //         if decl.version()? != b"1.0".as_ref() {
+        //             todo!()
+        //         };
+        //         // TODO: rewrite into unwrap_or()
+        //         match decl.encoding() {
+        //             Some(enc) => {
+        //                 if enc? != b"UTF-8".as_ref() {
+        //                     todo!()
+        //                 }
+        //             }
+        //             None => todo!(),
+        //         };
+        //     }
+        //     _ => todo!(),
+        // };
 
         let event = next_xml_event(reader)?;
         let doctype = event_unwrap_as_doctype(event)?.unescape()?;

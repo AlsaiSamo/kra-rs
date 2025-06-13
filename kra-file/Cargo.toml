@@ -11,13 +11,13 @@ default = []
 #no_data = []
 
 [dependencies]
-zip = "0.6"
-thiserror="1.0"
-getset="0.1.2"
-quick-xml = "0.31"
+zip = "4.0"
+thiserror="2.0"
+getset="0.1.5"
+quick-xml = "0.37"
 uuid-simd = "0.8.0"
-uuid = "1.2.2"
-ordered-float = "4.2.0"
+uuid = "1.17"
+ordered-float = "5.0"
 enum-as-inner = "0.6.1"
 defile = "0.2.1"
 paste = "1.0.15"

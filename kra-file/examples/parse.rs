@@ -5,8 +5,9 @@ use kra_file::{KraFile, layer::Node, parse::ParsingConfiguration};
 //print all nodes, recursively
 fn tree(node: &Node, depth: usize) {
     println!(
-        "{:>width$}{1}",
+        "{:>width$}{1}:    {2}",
         " ",
+        node.name().unwrap(),
         node.uuid().unwrap(),
         width = depth * 4
     );

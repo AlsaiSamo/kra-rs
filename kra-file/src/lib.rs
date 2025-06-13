@@ -27,10 +27,11 @@ use metadata::{KraMetadata, KraMetadataEnd, KraMetadataStart};
 use parse::{ParsingConfiguration, get_layers};
 use zip::ZipArchive;
 
-use quick_xml::Reader as XmlReader;
+use quick_xml::{Reader as XmlReader, reader::Config};
 
 use crate::metadata::DocumentInfo;
 
+// TODO: fill out with more variants
 /// Colorspace identifier.
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 #[non_exhaustive]
@@ -47,6 +48,18 @@ impl TryFrom<&str> for Colorspace {
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         match value {
             "RGBA" => Ok(Colorspace::RGBA),
+            // NOTE: these come from ConvertColorSpaceNames function from kis_kra_loader.cpp
+            // and are intended for old colorspacenames.
+            // "Grayscale + Alpha" => Ok(Colorspace::),
+            // "RgbAF32" => Ok(Colorspace::),
+            // "RgbbAF16" => Ok(Colorspace::),
+            // "CMYKA16" => Ok(Colorspace::),
+            // "GrayF32" => Ok(Colorspace::),
+            // "GRAYA16" => Ok(Colorspace::),
+            // "XyzAF16" => Ok(Colorspace::),
+            // "XyzAF32" => Ok(Colorspace::),
+            // "YCbCrA" => Ok(Colorspace::),
+            // "YCbCrAU16" => Ok(Colorspace::),
             other => Err(UnknownColorspace(other.to_owned())),
         }
     }
@@ -70,10 +83,9 @@ pub struct KraFile {
     layers: Vec<Node>,
     // TODO: implement file loading
     // files: HashMap<Uuid, NodeData>,
-    //TODO: use `png` crate if we want to view these
-    //TODO: also, gate these behind an option
-    merged_image: Option<Vec<u8>>,
-    preview: Option<Vec<u8>>,
+    // TODO: implement these (PNG images)
+    // merged_image: Option<Vec<u8>>,
+    // preview: Option<Vec<u8>>,
 }
 
 impl KraFile {
@@ -92,30 +104,39 @@ impl KraFile {
             return Err(ReadKraError::MimetypeMismatch);
         }
 
-        let mut doc_info = String::new();
+        let mut doc_info_data = String::new();
         zip.by_name("documentinfo.xml")?
-            .read_to_string(&mut doc_info)?;
-        let mut doc_info = XmlReader::from_str(doc_info.as_str());
+            .read_to_string(&mut doc_info_data)?;
+        let mut doc_info = XmlReader::from_str(doc_info_data.as_str());
 
-        doc_info.trim_text(true);
-        let doc_info = DocumentInfo::from_xml(&mut doc_info)
-            .map_err(|err| err.to_metadata_error("documentinfo.xml".into(), &doc_info))?;
+        doc_info.config_mut().trim_text(true);
+        let doc_info = DocumentInfo::from_xml(&mut doc_info).map_err(|err| {
+            err.to_metadata_error(
+                "documentinfo.xml".into(),
+                &doc_info,
+                doc_info_data.as_bytes(),
+            )
+        })?;
 
-        let mut maindoc = String::new();
-        zip.by_name("maindoc.xml")?.read_to_string(&mut maindoc)?;
-        let mut maindoc = XmlReader::from_str(maindoc.as_str());
+        let mut maindoc_data = String::new();
+        zip.by_name("maindoc.xml")?
+            .read_to_string(&mut maindoc_data)?;
+        let mut maindoc = XmlReader::from_str(maindoc_data.as_str());
 
-        maindoc.trim_text(true);
-        let meta_start = KraMetadataStart::from_xml(&mut maindoc)
-            .map_err(|err| err.to_metadata_error("maindoc.xml".into(), &maindoc))?;
+        maindoc.config_mut().trim_text(true);
+        let meta_start = KraMetadataStart::from_xml(&mut maindoc).map_err(|err| {
+            err.to_metadata_error("maindoc.xml".into(), &maindoc, maindoc_data.as_bytes())
+        })?;
 
         // let mut files = HashMap::new();
 
-        let layers = get_layers(&mut maindoc, conf, false)
-            .map_err(|err| err.to_metadata_error("maindoc".into(), &maindoc))?;
+        let layers = get_layers(&mut maindoc, conf, false).map_err(|err| {
+            err.to_metadata_error("maindoc".into(), &maindoc, maindoc_data.as_bytes())
+        })?;
 
-        let meta_end = KraMetadataEnd::from_xml(&mut maindoc)
-            .map_err(|err| err.to_metadata_error("maindoc.xml".into(), &maindoc))?;
+        let meta_end = KraMetadataEnd::from_xml(&mut maindoc).map_err(|err| {
+            err.to_metadata_error("maindoc.xml".into(), &maindoc, maindoc_data.as_bytes())
+        })?;
 
         let meta = KraMetadata::new(meta_start, meta_end);
 
@@ -125,8 +146,8 @@ impl KraFile {
             doc_info,
             layers,
             // files,
-            merged_image: None,
-            preview: None,
+            // merged_image: None,
+            // preview: None,
         })
     }
 }

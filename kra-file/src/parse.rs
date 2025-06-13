@@ -17,18 +17,22 @@ use crate::{
     },
 };
 
-// TODO: should other parsing config be present?
+// TODO: what other parsing configuration options should exist?
 
-/// Parsing confiuration and functions
 #[derive(Default, Copy, Clone)]
+// TODO: currently unused
 pub enum ShouldLoadFiles {
     #[default]
+    /// Do not load files.
     Never,
+    /// Load all files.
     Always,
+    /// Load only files for which the function returns `true`.
     Condition(fn(&Node) -> bool),
 }
 
 impl ShouldLoadFiles {
+    /// Set the condition when to load the files.
     pub fn should_load_files(&self, node: &Node) -> bool {
         match self {
             Self::Never => false,
@@ -39,9 +43,12 @@ impl ShouldLoadFiles {
 }
 
 #[derive(Default, Copy, Clone)]
+// TODO: currently unused, as the crate cannot load node data.
 pub struct ParsingConfiguration {
     should_load_files: ShouldLoadFiles,
+    // TODO: functions to set these fields
     should_decode_images: bool,
+    // TODO: and split this into two (mergedimage and preview loading)
     should_load_composited_images: bool,
 }
 
