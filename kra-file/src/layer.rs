@@ -14,13 +14,8 @@ use crate::dummy::{Colorspace, CompositeOp};
 use crate::error::{MetadataErrorReason, XmlError};
 use crate::helper::{event_get_attr, parse_attr, parse_bool};
 
-// TODO: move the types to a separate module.
-// Later, when creating the types crate, move them there.
-
-// TODO: restructure the project:
-// 1. Enforce "data" feature (by erroring on compiling with it).
-
 // TODO: setters and mut getters from getset
+// TODO: parse `selected="true"`
 
 macro_rules! getter_func {
     ($vis:vis $prop:ident -> &str) => {

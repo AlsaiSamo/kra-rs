@@ -1,20 +1,22 @@
 * Introduction
 Parsing =.kra= files.
 For now, =kra-file= only parses the metadata of a file.
-The goal is to allow loading the files or creating them from scratch, and editing them.
-The project will be later implemented in two crates, one providing core library functionality, another - file access.
+The goal is to allow loading the files or creating them from scratch, and modifying them (updating node data, inserting and removing nodes, updating metadata)
+The project will be implemented in two crates, one providing core library functionality, another - file access.
 ** Features
 *** Parse meta
 + File metadata
 + Layer metadata
   Does not parse ~selected="true"~ property, which indicates the layer that should be selected when loading the file.
 ** Tasks
-*** CURRENT Refresh metadata parsing
-It should actually work.
-*** CURRENT Refresh library interface, docs
-*** NEXT Raster layers
-+ Extract
+*** CURRENT Decode raster data
+This will be done in =kra= crate.
+*** NEXT Process raster layers
+In =kra-file=.
 + Decode
 + Encode
+*** NEXT Create a ~.kra~ file
++ Roundtrip a file
++ Create a file from scratch
 * License
 The library is licensed under GPL 3.0.
